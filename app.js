@@ -1207,6 +1207,81 @@
     if (!box || !INTRO.enabled) return api;
     let timers = [], done = null;
 
+    // Illustrated human eye (SVG): almond lids with lashes, fibred iris, pupil, highlights
+    function eyeSVG() {
+      const P0 = [40, 150], P2 = [560, 150];
+      const bez = (c, t) => [
+        (1 - t) * (1 - t) * P0[0] + 2 * (1 - t) * t * c[0] + t * t * P2[0],
+        (1 - t) * (1 - t) * P0[1] + 2 * (1 - t) * t * c[1] + t * t * P2[1]
+      ];
+      const tan = (c, t) => [2 * (1 - t) * (c[0] - P0[0]) + 2 * t * (P2[0] - c[0]), 2 * (1 - t) * (c[1] - P0[1]) + 2 * t * (P2[1] - c[1])];
+      // lashes along a lid curve; dir = -1 points up (open upper lid), +1 points down (closed lid)
+      const lashes = (c, dir, n, len) => {
+        let d = "";
+        for (let i = 0; i < n; i++) {
+          const t = 0.12 + (0.76 * i) / (n - 1);
+          const [x, y] = bez(c, t), [tx, ty] = tan(c, t), m = Math.hypot(tx, ty);
+          let nx = (ty / m) * -dir, ny = (-tx / m) * -dir;
+          if (ny * dir < 0) { nx = -nx; ny = -ny; }
+          const spread = (t - 0.5) * 1.1;                   // outer lashes fan outward
+          const L = len * (0.65 + 0.35 * Math.sin(Math.PI * t));
+          const ex = x + (nx + spread) * L, ey = y + ny * L;
+          const cx = x + nx * L * 0.55, cy = y + ny * L * 0.55;
+          d += `M${x.toFixed(1)},${y.toFixed(1)} Q${(cx + spread * 6).toFixed(1)},${cy.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)} `;
+        }
+        return d;
+      };
+      const UP = [300, -14], LOW = [300, 300], SHUT = [300, 214];
+      const almond = `M40,150 Q300,-14 560,150 Q300,300 40,150 Z`;
+      let fibres = "";
+      for (let a = 0; a < 360; a += 5) {
+        const r = (a * Math.PI) / 180, r1 = 32 + (a % 3) * 2, r2 = 70 - (a % 4) * 3;
+        fibres += `M${(300 + Math.cos(r) * r1).toFixed(1)},${(150 + Math.sin(r) * r1).toFixed(1)} L${(300 + Math.cos(r) * r2).toFixed(1)},${(150 + Math.sin(r) * r2).toFixed(1)} `;
+      }
+      const logoW = C.company.logoWhite ? `<image class="eye-logo" href="${esc(C.company.logoWhite)}" x="284" y="145" width="32" height="9.3"/>` : "";
+      return `
+        <svg viewBox="0 -60 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <clipPath id="eyeClip"><path d="${almond}"/></clipPath>
+            <radialGradient id="scl" cx="50%" cy="55%" r="60%"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eceaf9"/><stop offset="1" stop-color="#9e99c9"/></radialGradient>
+            <radialGradient id="iri" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#0b0a1f"/><stop offset=".38" stop-color="#3b2f9e"/>
+              <stop offset=".5" stop-color="#d9a65a"/><stop offset=".58" stop-color="#7d6bff"/>
+              <stop offset=".82" stop-color="#635bff"/><stop offset="1" stop-color="#1e1b4b"/>
+            </radialGradient>
+            <linearGradient id="lidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1b4b" stop-opacity=".55"/><stop offset=".45" stop-color="#1e1b4b" stop-opacity="0"/></linearGradient>
+            <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <g class="eye-closed" filter="url(#glow)">
+            <path d="M40,150 Q300,214 560,150" fill="none" stroke="#e9e6ff" stroke-width="5" stroke-linecap="round"/>
+            <path d="${lashes(SHUT, 1, 15, 30)}" fill="none" stroke="#e9e6ff" stroke-width="3.2" stroke-linecap="round"/>
+          </g>
+          <g class="eye-open">
+            <g clip-path="url(#eyeClip)">
+              <path d="${almond}" fill="url(#scl)"/>
+              <g class="eye-iris">
+                <circle cx="300" cy="150" r="76" fill="url(#iri)"/>
+                <path d="${fibres}" stroke="#ffffff" stroke-opacity=".16" stroke-width="1.3"/>
+                <circle cx="300" cy="150" r="76" fill="none" stroke="#0c0a24" stroke-width="7"/>
+                <g class="eye-pupil">
+                  <circle cx="300" cy="150" r="27" fill="#030208"/>
+                  ${logoW}
+                </g>
+                <ellipse cx="276" cy="124" rx="13" ry="9" fill="#fff" opacity=".92"/>
+                <circle cx="322" cy="174" r="4" fill="#fff" opacity=".6"/>
+              </g>
+              <path d="${almond}" fill="url(#lidShade)"/>
+            </g>
+            <g filter="url(#glow)">
+              <path d="M40,150 Q300,-14 560,150" fill="none" stroke="#e9e6ff" stroke-width="6" stroke-linecap="round"/>
+              <path d="M40,150 Q300,300 560,150" fill="none" stroke="#e9e6ff" stroke-opacity=".55" stroke-width="2.5"/>
+              <path d="M70,118 Q300,-58 530,118" fill="none" stroke="#e9e6ff" stroke-opacity=".25" stroke-width="2" class="eye-crease"/>
+              <path d="${lashes(UP, -1, 17, 40)}" fill="none" stroke="#e9e6ff" stroke-width="3.4" stroke-linecap="round"/>
+            </g>
+          </g>
+        </svg>`;
+    }
+
     function build() {
       const lines = (INTRO.lines || []).map((l, i) => `<span class="il" style="--i:${i}">${esc(l)}</span>`).join("");
       const closing = (INTRO.closing || "").split(".").filter((x) => x.trim())
@@ -1225,8 +1300,8 @@
             <div class="in-closing">${closing}</div>
           </div>
         </div>
-        <div class="in-lid top"></div><div class="in-lid bot"></div>
         <div class="in-pulse"></div>
+        <div class="in-eye">${eyeSVG()}</div>
         <div class="in-skip">Press any key to skip</div>`;
     }
     const at = (ms, fn) => timers.push(setTimeout(fn, ms));
@@ -1243,25 +1318,31 @@
       box.className = "";
       void box.offsetWidth;
       const T = [
-        [100, "p-pulse"],    // heartbeat glow on black
-        [1500, "p-crack"],   // eyes half open, blurred
-        [2300, "p-blink"],   // blink
-        [2650, "p-open"],    // open fully, focus pulls in
-        [4100, "p-charge"],  // battery charging
-        [5200, "p-brand"],   // logo light sweep
-        [5900, "p-lines"],   // taglines
-        [7500, "p-close"],   // closing line
-        [9900, "p-exit"]     // zoom out into the deck
+        [100, "p-pulse"],      // heartbeat glow on black
+        [900, "e-closed"],     // closed eye fades in
+        [2100, "e-peek"],      // eye flutters half open
+        [2550, "e-blink"],     // blink
+        [2850, "e-open"],      // opens fully
+        [3500, "e-left"],      // looks left
+        [4050, "e-right"],     // looks right
+        [4600, "e-center"],    // looks at you
+        [4900, "e-dilate"],    // pupil dilates, Litpax reflection
+        [5800, "p-dive"],      // camera dives through the pupil into the scene
+        [7100, "p-charge"],    // battery charging
+        [8200, "p-brand"],     // logo light sweep
+        [8900, "p-lines"],     // taglines
+        [10500, "p-close"],    // closing line
+        [12900, "p-exit"]      // zoom out into the deck
       ];
       T.forEach(([ms, cls]) => at(ms, () => box.classList.add(cls)));
-      at(9900, reveal);      // title slide animates in underneath the fade
+      at(12900, reveal);       // title slide animates in underneath the fade
       done = () => finish();
-      at(10900, done);
+      at(13900, done);
     }
     function skip() {
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
-      box.classList.add("p-open", "p-exit", "fast");
+      box.classList.add("p-dive", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
     }
