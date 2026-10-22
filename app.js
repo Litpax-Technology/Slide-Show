@@ -77,6 +77,45 @@
     img: svg("M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 16l5-5 4 4 3-3 6 6"),
     star: svg("M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.3L12 17.5 6.4 20.4l1.1-6.3L3 9.7l6.2-.9z", "st-ic")
   };
+
+  // Animated Litpax battery (drawn in code — no product photo needed)
+  let battSeq = 0;
+  function batterySVG(cls) {
+    const id = "bt" + (++battSeq), P = C.company.productArt || {};
+    const volt = esc(P.volt || "74V"), cap = esc(P.cap || "36Ah");
+    const logo = C.company.logoWhite ? `<image href="${esc(C.company.logoWhite)}" x="16" y="16" width="118" height="34"/>`
+                                     : `<text x="16" y="44" class="bt-logo-t">${esc(C.company.shortName)}</text>`;
+    return `
+      <svg class="batt-art ${cls || ""}" viewBox="0 0 300 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Litpax lithium battery">
+        <defs>
+          <linearGradient id="${id}f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#30343c"/><stop offset=".55" stop-color="#1b1e23"/><stop offset="1" stop-color="#121417"/></linearGradient>
+          <linearGradient id="${id}t" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#454a53"/><stop offset="1" stop-color="#2f333a"/></linearGradient>
+          <linearGradient id="${id}l" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--night-1)"/><stop offset="1" stop-color="#0a0b0e"/></linearGradient>
+          <linearGradient id="${id}w" x1="0" y1="1" x2="1" y2="0"><stop offset="0" style="stop-color:var(--accent-deep)" stop-opacity=".0"/><stop offset=".45" style="stop-color:var(--accent)"/><stop offset=".75" style="stop-color:var(--iris-warm)"/><stop offset="1" style="stop-color:var(--accent-light)" stop-opacity=".2"/></linearGradient>
+          <clipPath id="${id}c"><path d="M80 132 L268 106 L268 378 L80 404 Z"/></clipPath>
+        </defs>
+        <ellipse cx="160" cy="410" rx="130" ry="14" fill="#000" opacity=".28"/>
+        <path d="M40 112 L80 132 L80 404 L40 384 Z" fill="#15171b"/>
+        <path d="M80 132 L268 106 L268 378 L80 404 Z" fill="url(#${id}f)"/>
+        <path d="M40 112 L228 86 L268 106 L80 132 Z" fill="url(#${id}t)"/>
+        <path d="M40 112 L80 132 L268 106" fill="none" stroke="#5a606a" stroke-width="1.5"/>
+        <path d="M92 100 Q120 86 160 82" fill="none" stroke="#0d0e10" stroke-width="7" stroke-linecap="round"/>
+        <g><rect x="186" y="78" width="16" height="13" fill="#b8322a"/><ellipse cx="194" cy="91" rx="8" ry="3.5" fill="#8e251f"/><ellipse cx="194" cy="78" rx="8" ry="3.5" fill="#e04a3f"/></g>
+        <g><rect x="218" y="83" width="16" height="13" fill="#141414"/><ellipse cx="226" cy="96" rx="8" ry="3.5" fill="#0a0a0a"/><ellipse cx="226" cy="83" rx="8" ry="3.5" fill="#3a3a3a"/></g>
+        <g transform="translate(94,158) skewY(-7.6)">
+          <rect x="0" y="0" width="160" height="196" rx="8" fill="url(#${id}l)" stroke="rgba(255,255,255,.08)"/>
+          <path d="M0 196 L0 150 Q60 120 160 40 L160 92 Q90 150 40 196 Z" fill="url(#${id}w)" opacity=".9"/>
+          ${logo}
+          <text x="16" y="74" class="bt-t1">LITHIUM ION</text>
+          <text x="16" y="92" class="bt-t2">POWER PACK · ${cap}</text>
+          <circle cx="128" cy="128" r="22" style="fill:var(--accent)"/><circle cx="128" cy="128" r="22" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+          <text x="128" y="133" class="bt-v" text-anchor="middle">${volt}</text>
+          ${[0, 1, 2, 3, 4].map((i) => `<rect class="bt-seg" x="${16 + i * 15}" y="168" width="11" height="12" rx="2" style="animation-delay:${(i * 0.32).toFixed(2)}s"/>`).join("")}
+          <circle class="bt-led" cx="146" cy="174" r="4"/>
+        </g>
+        <g clip-path="url(#${id}c)"><path class="bt-shine" d="M40 404 L100 404 L190 100 L130 100 Z" fill="#fff" opacity=".10"/></g>
+      </svg>`;
+  }
   const DEMO = Object.assign({ autoSwitch: true, screenshotSeconds: 6 }, C.demo || {});
   const TAG = C.taglines || {};
   const AMB = C.ambition || null;
@@ -116,7 +155,7 @@
         ${frame(C.steps.find((s) => s.id === "order").shot, "Litpax ERP", "tf tf1 rv")}
         ${frame(C.steps.find((s) => s.id === "production").shot, "Production Tracker", "tf tf2 rv")}
         ${frame(C.steps.find((s) => s.id === "clientdash").shot, "Partner Dashboard", "tf tf3 rv")}
-        ${C.company.product ? `<div class="title-batt rv"><img src="${esc(C.company.product)}" alt="Litpax battery" onerror="this.parentNode.remove()"><span class="batt-glow"></span></div>` : ""}
+        <div class="title-batt rv">${batterySVG()}<span class="batt-glow"></span></div>
       </div>`
   });
 
@@ -169,6 +208,47 @@
         ${C.why.map((w, k) => `<div class="why rv"><div class="why-n">${pad(k + 1)}</div><b>${esc(w.t)}</b><span>${esc(w.d)}</span></div>`).join("")}
       </div>`, { kicker: "Why Litpax" })
   });
+
+  // 1a-ii. Your dedicated team — Sales CRM + Service CRM (the two people who deal with the client)
+  if (VAL.crm) {
+    const cr = VAL.crm;
+    const person = (kind) => `
+      <svg class="crm-av" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="58" style="fill:var(--accent-soft)"/>
+        <path d="M22 112 Q24 78 60 76 Q96 78 98 112 Z" style="fill:var(--indigo)"/>
+        ${kind === "sales"
+          ? `<path d="M54 78 L60 98 L66 78 Z" style="fill:var(--accent)"/><path d="M50 77 L60 86 L70 77" fill="none" stroke="#fff" stroke-width="3"/>`
+          : `<path d="M44 77 L60 90 L76 77" fill="none" stroke="#fff" stroke-width="3"/>`}
+        <circle cx="60" cy="50" r="22" fill="#f1c9a5"/>
+        <path d="M38 48 Q40 26 60 26 Q80 26 82 48 Q74 36 60 37 Q46 36 38 48 Z" fill="#2b2118"/>
+        ${kind === "service"
+          ? `<path d="M34 52 Q34 22 60 22 Q86 22 86 52" fill="none" style="stroke:var(--accent)" stroke-width="5" stroke-linecap="round"/><rect x="29" y="46" width="10" height="16" rx="4" style="fill:var(--accent)"/><rect x="81" y="46" width="10" height="16" rx="4" style="fill:var(--accent)"/><path d="M86 60 Q86 72 70 72" fill="none" style="stroke:var(--accent)" stroke-width="3"/><circle cx="68" cy="72" r="3.5" style="fill:var(--accent)"/>`
+          : `<rect x="78" y="80" width="22" height="30" rx="3" fill="#fff" style="stroke:var(--accent)" stroke-width="2"/><path d="M83 89 h12 M83 95 h12 M83 101 h8" style="stroke:var(--accent)" stroke-width="2"/>`}
+      </svg>`;
+    const card = (r, kind, side) => `
+      <div class="crm-card ${side}" data-k="${kind}">
+        <div class="crm-top">${person(kind)}<div><span class="crm-role">${esc(r.role)}</span><b>${esc(r.title)}</b></div></div>
+        <p>${esc(r.line)}</p>
+        <ul>${r.does.map((d) => `<li>${ICON.check}<span>${esc(d)}</span></li>`).join("")}</ul>
+      </div>`;
+    slides.push({
+      title: "Your dedicated team", cls: "s-crm", hero: "crm",
+      html: chrome(`
+        <div class="center-head compact">
+          <div class="eyebrow rv">${esc(cr.kicker)}</div>
+          <h2 class="rv">${esc(cr.title)}</h2>
+        </div>
+        <div class="crm">
+          ${card(cr.sales, "sales", "l")}
+          <div class="crm-mid">
+            <svg class="crm-links" viewBox="0 0 220 300" preserveAspectRatio="none"><path class="ln l" d="M0 150 C 60 150, 60 150, 110 150"/><path class="ln r" d="M220 150 C 160 150, 160 150, 110 150"/></svg>
+            <div class="crm-you"><span>${ICON.user}</span><b>${esc(cr.you || "You")}</b><em>${esc(cr.youSub || "One call, the right person")}</em></div>
+            <div class="crm-plant">${C.company.logo ? `<img src="${esc(C.company.logo)}" alt="Litpax">` : esc(C.company.shortName)}<span>${esc(cr.plant || "Plant · Production · Dispatch")}</span></div>
+          </div>
+          ${card(cr.service, "service", "r")}
+        </div>`, { kicker: "Your team" })
+    });
+  }
 
   // 1b. Ambition — Milestone 2027 (cinematic dark statement slide)
   if (AMB) {
@@ -422,7 +502,7 @@
       html: chrome(`
         <div class="prod-wrap">
           <div class="prod-left rv">
-            <div class="prod-stage"><span class="prod-glow"></span>${C.company.product ? `<img src="${esc(C.company.product)}" alt="Litpax battery">` : ""}</div>
+            <div class="prod-stage"><span class="prod-glow"></span>${batterySVG()}</div>
             <div class="prod-tag">${esc(pr.heroLabel || "")}</div>
           </div>
           <div class="prod-right">
@@ -584,7 +664,7 @@
     "s-title": "title", "s-amb": "ambition", "s-miles": "miles", "s-glance": "glance", "s-chain": "chain",
     "s-trace": "trace", "s-fms": "fms", "s-control": "control", "s-gallery": "gallery",
     "s-promise": "promise", "s-why": "why", "s-end": "end",
-    "s-chal": "challenges", "s-gain": "gains", "s-track": "track", "s-vs": "versus", "s-prod": "products", "s-start": "start", "s-voices": "voices"
+    "s-chal": "challenges", "s-gain": "gains", "s-track": "track", "s-vs": "versus", "s-prod": "products", "s-start": "start", "s-voices": "voices", "s-crm": "crm"
   };
 
   /* ---------- render ---------- */
@@ -1209,6 +1289,25 @@
         await c.wait(350); st[i].classList.add("on"); await c.wait(500);
       }
     },
+    crm: async (el, c) => {
+      const k = K(el), you = el.querySelector(".crm-you"), plant = el.querySelector(".crm-plant");
+      [k("sales"), k("service")].forEach((x) => x.classList.remove("in", "lit"));
+      you.classList.remove("in"); plant.classList.remove("in"); el.querySelector(".crm-links").classList.remove("in");
+      qa(el, ".crm-card li").forEach((x) => x.classList.remove("in"));
+      await c.wait(600); you.classList.add("in");
+      await c.wait(500); el.querySelector(".crm-links").classList.add("in");
+      for (const kind of ["sales", "service"]) {
+        await c.wait(450); const cd = k(kind); cd.classList.add("in");
+        for (const li of qa(cd, "li")) { await c.wait(260); li.classList.add("in"); }
+      }
+      await c.wait(400); plant.classList.add("in");
+      while (c.alive) {                       // the client's call alternates between the two CRMs
+        for (const kind of ["sales", "service"]) {
+          k(kind).classList.add("lit"); el.querySelector(".crm-links").dataset.side = kind;
+          await c.wait(1800); k(kind).classList.remove("lit");
+        }
+      }
+    },
     ambition: async (el, c) => {
       const k = K(el), words = qa(el, ".amb-sub .w"), trio = qa(el, ".amb-trio span");
       words.forEach((w) => w.classList.remove("in")); trio.forEach((t) => t.classList.remove("in"));
@@ -1402,10 +1501,13 @@
       });
     };
     api.tick = () => api.whoosh(0.45, false);
+    let padLevel = 0.045;
+    api.duck = (on) => { if (!pad || !ac) return; pad.out.gain.setTargetAtTime(on ? padLevel * 0.25 : padLevel, ac.currentTime, 0.25); };
     // ambient background pad (A minor 9), very quiet, slowly breathing
     api.padStart = (level) => {
       if (!ac || pad) return;
-      const t = now(), out = ac.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(level || 0.05, t + 4); out.connect(master);
+      padLevel = level || 0.045;
+      const t = now(), out = ac.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(padLevel, t + 4); out.connect(master);
       const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(out);
       const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 350; lfo.connect(lg); lg.connect(lp.frequency); lfo.start(t);
       const oscs = [110, 164.81, 220, 261.63, 329.63, 493.88].map((fq, i) => {
@@ -1421,13 +1523,13 @@
      NARRATION — plays assets/voice/<key>.mp3 when present,
      otherwise the most natural deep male voice the browser has.
      ========================================================= */
-  const VO = Object.assign({ enabled: true, autoAdvance: false, rate: 0.9, pitch: 0.72, folder: "assets/voice/", lines: {}, intro: [] }, C.voice || {});
+  const VO = Object.assign({ enabled: true, autoAdvance: false, rate: 0.94, pitch: 1, folder: "assets/voice/", lines: {}, intro: [] }, C.voice || {});
   const Voice = (function () {
     const synth = window.speechSynthesis;
     let voice = null, audio = null, token = 0;
     const prefer = [
-      /Prabhat/i, /Microsoft (Guy|Andrew|Brian|Christopher|Davis|Eric|Roger|Steffan|Ryan|Thomas).*Natural/i,
-      /Google UK English Male/i, /Daniel/i, /Microsoft (Ravi|David|Mark|George)/i, /en-IN/i, /en-GB/i, /^en/i
+      /Prabhat.*(Natural|Online)/i, /Microsoft (Andrew|Brian|Guy|Christopher|Davis|Eric|Roger|Steffan|Ryan|Thomas).*(Natural|Online)/i,
+      /(Natural|Online).*en-(IN|GB|US)/i, /Prabhat/i, /Google UK English Male/i, /Daniel/i, /Microsoft (Ravi|David|Mark|George)/i, /en-IN/i, /en-GB/i, /^en/i
     ];
     function pick() {
       if (!synth) return;
@@ -1443,6 +1545,7 @@
     const api = {};
     api.stop = () => {
       token++;
+      SFX.duck(false);
       if (audio) { audio.onended = audio.onerror = null; audio.pause(); audio = null; }
       if (synth) synth.cancel();
     };
@@ -1458,13 +1561,15 @@
         if (voice) u.voice = voice;
         u.lang = (voice && voice.lang) || "en-IN";
         u.rate = opts.rate || VO.rate; u.pitch = opts.pitch || VO.pitch; u.volume = 1;
-        u.onend = done; u.onerror = done;
+        u.onstart = () => SFX.duck(true);
+        u.onend = () => { SFX.duck(false); done(); }; u.onerror = () => { SFX.duck(false); done(); };
         synth.speak(u);
       };
       if (!key) return tts();
       const a = new Audio(VO.folder + key + ".mp3");
       audio = a;
-      a.onended = done;
+      a.onplay = () => SFX.duck(true);
+      a.onended = () => { SFX.duck(false); done(); };
       a.onerror = () => { if (audio === a) audio = null; tts(); };
       a.play().catch(() => { if (audio === a) { audio = null; tts(); } });
     };
@@ -1829,7 +1934,7 @@
           <div class="in-bg"></div>
           <div class="in-rays"></div>
           <div class="in-batt">
-            ${INTRO.battery ? `<img src="${esc(INTRO.battery)}" alt="" onerror="this.remove()">` : ""}
+            ${batterySVG()}
             <div class="in-charge"><span>${esc(INTRO.chargeLabel || "Charging")}</span><div class="in-bar"><i></i></div></div>
           </div>
           <div class="in-brand">
@@ -1867,7 +1972,7 @@
     const at = (ms, fn) => timers.push(setTimeout(fn, ms));
     const addC = (cls) => box.classList.add(cls);
     const setAs = (t) => { const el = box.querySelector('[data-k="asl"]'); if (el) el.textContent = t; };
-    const line = (n) => { const t = (VO.intro || [])[n]; if (t) Voice.say("intro-" + (n + 1), t, { rate: 0.82, pitch: 0.62 }); };
+    const line = (n) => { const t = (VO.intro || [])[n]; if (t) Voice.say("intro-" + (n + 1), t, { rate: 0.86, pitch: 0.95 }); };
 
     function hudRun(fromAlt, toAlt, fromSpd, toSpd, ms) {
       const a = box.querySelector('[data-k="alt"]'), sp = box.querySelector('[data-k="spd"]');
