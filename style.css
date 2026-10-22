@@ -252,7 +252,7 @@ h2 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.03em
   background: var(--accent); border-radius: 7px; box-sizing: border-box;
 }
 .step-right { position: relative; flex: 1; height: 100%; }
-.frame-main { position: absolute; inset: 48px 0 26px 0; }
+.frame-main { position: absolute; inset: 14px 0 26px 0; }
 .frame-mini {
   position: absolute; width: 250px; height: 175px; left: -40px; bottom: 0; z-index: 2;
   opacity: 0; transform: translateY(14px); transition: opacity .45s var(--ease), transform .45s var(--ease); pointer-events: none;
@@ -1085,3 +1085,10 @@ h2 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.03em
 @media (prefers-reduced-motion: reduce) {
   .orbit-track, .orbit-chip i, .amb-orbs i, .in-rays { animation: none !important; }
 }
+
+/* No tabs: a slide with a screenshot shows it directly, otherwise the animated demo */
+.vtabs { display: none !important; }
+.step-right[data-shot="1"] .view-demo { opacity: 0; pointer-events: none; }
+.step-right[data-shot="1"] .view-shot { opacity: 1; pointer-events: auto; }
+.step-right[data-shot="1"] .frame-mini { opacity: 1; transform: none; }
+@media print { .frame-main { inset: 14px 0 26px 0; } }
