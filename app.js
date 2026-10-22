@@ -83,6 +83,7 @@
   const PROM = C.promise || null;
   const MILES = (C.milestones || []).filter((m) => m && m.year && m.title);
   const INTRO = C.intro || { enabled: false };
+  const VAL = C.value || {};
 
   function chrome(inner, opts) {
     opts = opts || {};
@@ -117,6 +118,56 @@
         ${frame(C.steps.find((s) => s.id === "clientdash").shot, "Partner Dashboard", "tf tf3 rv")}
         ${C.company.product ? `<div class="title-batt rv"><img src="${esc(C.company.product)}" alt="Litpax battery" onerror="this.parentNode.remove()"><span class="batt-glow"></span></div>` : ""}
       </div>`
+  });
+
+  // 1a. VALUE — the client's challenges, what they gain, why choose Litpax
+  if (VAL.challenges) {
+    const ch = VAL.challenges;
+    slides.push({
+      title: "The challenge", cls: "s-chal", hero: "chal",
+      html: chrome(`
+        <div class="chal-wrap">
+          <div class="chal-left">
+            <div class="eyebrow rv">${esc(ch.kicker)}</div>
+            <h2 class="rv">${esc(ch.title)}</h2>
+            <p class="tag rv">${esc(ch.sub)}</p>
+            <div class="chal-answer" data-k="ans">${ICON.check} ${esc(ch.answer)}</div>
+          </div>
+          <div class="chal-list">${ch.items.map((t, i) => `<div class="chal" data-k="c${i}"><span class="chal-x">${ICON.x}</span><div><b>${esc(t.t)}</b><span>${esc(t.d)}</span></div></div>`).join("")}</div>
+        </div>`, { kicker: "The challenge" })
+    });
+  }
+  if (VAL.gains) {
+    const g = VAL.gains;
+    slides.push({
+      title: "What you get", cls: "s-gain", hero: "gain",
+      html: chrome(`
+        <div class="center-head compact">
+          <div class="eyebrow rv">${esc(g.kicker)}</div>
+          <h2 class="rv">${esc(g.title)}</h2>
+        </div>
+        <div class="gain">
+          <div class="gain-row gain-h rv"><span>Today</span><span></span><span>With Litpax</span><span>Your gain</span></div>
+          ${g.rows.map((r, i) => `
+            <div class="gain-row" data-k="g${i}">
+              <span class="g-old">${esc(r[0])}</span>
+              <span class="g-arr">${arrow}</span>
+              <span class="g-new">${esc(r[1])}</span>
+              <span class="g-win">${ICON.check}${esc(r[2])}</span>
+            </div>`).join("")}
+        </div>`, { kicker: "Value for you" })
+    });
+  }
+  slides.push({
+    title: "Why choose Litpax", cls: "s-why", hero: "why",
+    html: chrome(`
+      <div class="center-head compact">
+        <div class="eyebrow rv">${esc((VAL.whyKicker) || "Why choose us")}</div>
+        <h2 class="rv">${esc((VAL.whyTitle) || "Why choose Litpax.")}</h2>
+      </div>
+      <div class="why-grid">
+        ${C.why.map((w, k) => `<div class="why rv"><div class="why-n">${pad(k + 1)}</div><b>${esc(w.t)}</b><span>${esc(w.d)}</span></div>`).join("")}
+      </div>`, { kicker: "Why Litpax" })
   });
 
   // 1b. Ambition — Milestone 2027 (cinematic dark statement slide)
@@ -233,6 +284,36 @@
     });
   });
 
+  // 4b. How we track your order (real ERP screen, customer details blurred)
+  if (VAL.track) {
+    const tk = VAL.track;
+    slides.push({
+      title: "How we track your order", cls: "s-track", hero: "track",
+      html: chrome(`
+        <div class="trk-wrap">
+          <div class="trk-left">
+            <div class="eyebrow rv">${esc(tk.kicker)}</div>
+            <h2 class="rv">${esc(tk.title)}</h2>
+            <p class="tag rv">${esc(tk.sub)}</p>
+            <div class="trk-steps">${tk.stages.map((st, i) => `
+              <div class="trk-s rv" data-k="t${i}" data-pos="${st.pos}">
+                <div class="trk-d">${pad(i + 1)}</div>
+                <div><b>${esc(st.t)}</b><span>${esc(st.d)}</span></div>
+              </div>`).join("")}
+            </div>
+          </div>
+          <div class="trk-right rv">
+            <div class="frame trk-frame">
+              <div class="frame-bar"><i></i><i></i><i></i><span>${esc(tk.bar || "Litpax ERP · Order tracking")}</span></div>
+              <div class="trk-view"><img data-k="img" src="${esc(tk.shot)}" alt="Order tracking screen"><div class="trk-hl" data-k="hl"></div></div>
+              <div class="trk-badge" data-k="badge">${esc(tk.stages[0].t)}</div>
+            </div>
+            <span class="trk-note">${esc(tk.note || "")}</span>
+          </div>
+        </div>`, { kicker: "Order tracking" })
+    });
+  }
+
   // 5. Traceability highlight
   const life = [
     { t: "Material issued", a: "IMS" },
@@ -311,8 +392,76 @@
       </div>`, { kicker: "Control tower" })
   });
 
-  // 8. Gallery
-  slides.push({
+  // 7b. Litpax vs a typical supplier
+  if (VAL.versus) {
+    const v = VAL.versus;
+    slides.push({
+      title: "Litpax vs a typical supplier", cls: "s-vs", hero: "vs",
+      html: chrome(`
+        <div class="center-head compact">
+          <div class="eyebrow rv">${esc(v.kicker)}</div>
+          <h2 class="rv">${esc(v.title)}</h2>
+        </div>
+        <div class="vs">
+          <div class="vs-row vs-h rv"><span></span><span>${esc(v.them)}</span><span class="vs-us-h">${C.company.logo ? `<img src="${esc(C.company.logo)}" alt="Litpax">` : "Litpax"}</span></div>
+          ${v.rows.map((r, i) => `
+            <div class="vs-row" data-k="v${i}">
+              <b>${esc(r[0])}</b>
+              <span class="vs-them">${ICON.x}${esc(r[1])}</span>
+              <span class="vs-us">${ICON.check}${esc(r[2])}</span>
+            </div>`).join("")}
+        </div>`, { kicker: "The difference" })
+    });
+  }
+
+  // 7c. Product range (real models)
+  if (VAL.products) {
+    const pr = VAL.products;
+    slides.push({
+      title: "Our product range", cls: "s-prod", hero: "prod",
+      html: chrome(`
+        <div class="prod-wrap">
+          <div class="prod-left rv">
+            <div class="prod-stage"><span class="prod-glow"></span>${C.company.product ? `<img src="${esc(C.company.product)}" alt="Litpax battery">` : ""}</div>
+            <div class="prod-tag">${esc(pr.heroLabel || "")}</div>
+          </div>
+          <div class="prod-right">
+            <div class="eyebrow rv">${esc(pr.kicker)}</div>
+            <h2 class="rv">${esc(pr.title)}</h2>
+            <div class="prod-grid">${pr.lines.map((l, i) => `
+              <div class="prod-card" data-k="p${i}">
+                <b>${esc(l.name)}</b><span>${esc(l.desc)}</span>
+                <div class="prod-specs">${(l.specs || []).map((x) => `<em>${esc(x)}</em>`).join("")}</div>
+              </div>`).join("")}
+            </div>
+          </div>
+        </div>`, { kicker: "Products" })
+    });
+  }
+
+  // 7d. What our partners say (real reviews from the Customer Review form)
+  const VOICES = (C.testimonials || []).filter((t) => t && t.quote);
+  if (VOICES.length) {
+    slides.push({
+      title: "What our partners say", cls: "s-voices",
+      html: chrome(`
+        <div class="center-head compact">
+          <div class="eyebrow rv">From our Customer Review form</div>
+          <h2 class="rv">What our partners say.</h2>
+        </div>
+        <div class="voices">${VOICES.map((t) => `
+          <div class="voice-c rv">
+            ${t.stars ? `<div class="voice-stars">${ICON.star.repeat(t.stars)}</div>` : ""}
+            <p>${esc(t.quote)}</p>
+            <div class="voice-who"><div class="av">${esc((t.name || "").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase())}</div>
+              <div><b>${esc(t.name)}</b><span>${esc(t.place || "")}</span></div></div>
+          </div>`).join("")}
+        </div>`, { kicker: "Partners" })
+    });
+  }
+
+  // 8. Gallery (only when apps are listed in config)
+  if ((C.gallery || []).length) slides.push({
     title: "Our apps",
     cls: "s-gallery",
     html: chrome(`
@@ -354,19 +503,31 @@
     });
   }
 
-  // 9. Why Litpax
-  slides.push({
-    title: "Why partner with Litpax",
-    cls: "s-why",
-    html: chrome(`
-      <div class="center-head compact">
-        <div class="eyebrow rv">What this means for you</div>
-        <h2 class="rv">Why partner with Litpax.</h2>
-      </div>
-      <div class="why-grid">
-        ${C.why.map((w, k) => `<div class="why rv"><div class="why-n">${pad(k + 1)}</div><b>${esc(w.t)}</b><span>${esc(w.d)}</span></div>`).join("")}
-      </div>`, { kicker: "Value" })
-  });
+  // 9b. How to start working with us
+  if (VAL.start) {
+    const st = VAL.start, ctc = C.company.contact || {};
+    slides.push({
+      title: "How to start", cls: "s-start", hero: "start",
+      html: chrome(`
+        <div class="center-head compact">
+          <div class="eyebrow rv">${esc(st.kicker)}</div>
+          <h2 class="rv">${esc(st.title)}</h2>
+        </div>
+        <div class="start">
+          <div class="start-line"><i data-k="sfill"></i></div>
+          ${st.steps.map((x, i) => `
+            <div class="start-s" data-k="s${i}">
+              <div class="start-d">${pad(i + 1)}</div>
+              <b>${esc(x.t)}</b><span>${esc(x.d)}</span>
+            </div>`).join("")}
+        </div>
+        <div class="start-cta rv">
+          ${ctc.phone ? `<div>${ICON.phone}<span>Call</span><b>${esc(ctc.phone)}</b></div>` : ""}
+          ${ctc.website ? `<div>${ICON.doc}<span>Visit</span><b>${esc(ctc.website)}</b></div>` : ""}
+          ${ctc.email ? `<div>${ICON.bell}<span>Write</span><b>${esc(ctc.email)}</b></div>` : ""}
+        </div>`, { kicker: "Get started" })
+    });
+  }
 
   // 10. Contact
   const ct = C.company.contact;
@@ -422,7 +583,8 @@
   const CLS2KEY = {
     "s-title": "title", "s-amb": "ambition", "s-miles": "miles", "s-glance": "glance", "s-chain": "chain",
     "s-trace": "trace", "s-fms": "fms", "s-control": "control", "s-gallery": "gallery",
-    "s-promise": "promise", "s-why": "why", "s-end": "end"
+    "s-promise": "promise", "s-why": "why", "s-end": "end",
+    "s-chal": "challenges", "s-gain": "gains", "s-track": "track", "s-vs": "versus", "s-prod": "products", "s-start": "start", "s-voices": "voices"
   };
 
   /* ---------- render ---------- */
@@ -991,6 +1153,60 @@
           await c.wait(500);
         }
         await c.wait(2600);
+      }
+    },
+    chal: async (el, c) => {
+      const items = qa(el, ".chal"), ans = el.querySelector(".chal-answer");
+      items.forEach((x) => x.classList.remove("in")); ans.classList.remove("in");
+      await c.wait(700);
+      for (const x of items) { x.classList.add("in"); await c.wait(520); }
+      await c.wait(500); ans.classList.add("in"); SFX.ding();
+    },
+    gain: async (el, c) => {
+      const rows = qa(el, ".gain-row[data-k]");
+      rows.forEach((r) => r.classList.remove("in", "done"));
+      await c.wait(700);
+      for (const r of rows) {
+        r.classList.add("in"); await c.wait(450);
+        r.classList.add("done"); await c.wait(550);
+      }
+    },
+    track: async (el, c) => {
+      const k = K(el), img = k("img"), view = img.parentNode, steps = qa(el, ".trk-s");
+      await c.wait(900);
+      while (c.alive) {
+        for (let i = 0; i < steps.length; i++) {
+          steps.forEach((x, j) => { x.classList.toggle("on", j === i); x.classList.toggle("done", j < i); });
+          const H = img.offsetHeight, V = view.offsetHeight;
+          const y = Math.max(0, Math.min(H - V, +steps[i].dataset.pos * H - 8));
+          img.style.transform = `translateY(${-y}px)`;
+          k("badge").textContent = steps[i].querySelector("b").textContent;
+          k("badge").classList.remove("pop"); void k("badge").offsetWidth; k("badge").classList.add("pop");
+          await c.wait(2300);
+        }
+        steps.forEach((x) => x.classList.add("done"));
+        await c.wait(1600);
+      }
+    },
+    vs: async (el, c) => {
+      const rows = qa(el, ".vs-row[data-k]");
+      rows.forEach((r) => r.classList.remove("in"));
+      await c.wait(800);
+      for (const r of rows) { r.classList.add("in"); await c.wait(480); }
+    },
+    prod: async (el, c) => {
+      const cards = qa(el, ".prod-card");
+      cards.forEach((x) => x.classList.remove("in"));
+      await c.wait(700);
+      for (const x of cards) { x.classList.add("in"); await c.wait(380); }
+    },
+    start: async (el, c) => {
+      const st = qa(el, ".start-s"), fill = el.querySelector('[data-k="sfill"]');
+      st.forEach((x) => x.classList.remove("on")); fill.style.width = "0";
+      await c.wait(800);
+      for (let i = 0; i < st.length; i++) {
+        fill.style.width = (i / (st.length - 1)) * 100 + "%";
+        await c.wait(350); st[i].classList.add("on"); await c.wait(500);
       }
     },
     ambition: async (el, c) => {
@@ -1576,6 +1792,34 @@
         </div>`;
     }
 
+    // Battery assembly: cells fly into a grid → nickel strips → BMS → casing closes → real Litpax pack powers on
+    function assembleScene() {
+      const cols = 8, rows = 6, pitch = 52, W0 = cols * pitch, H0 = rows * pitch;
+      const gx = 640 - W0 / 2, gy = 350 - H0 / 2;
+      let cells = "", strips = "";
+      for (let r = 0; r < rows; r++) {
+        for (let q = 0; q < cols; q++) {
+          const n = r * cols + q, ang = (n * 137.5) % 360, dist = 520 + (n % 5) * 90;
+          const sx = Math.cos((ang * Math.PI) / 180) * dist, sy = Math.sin((ang * Math.PI) / 180) * dist * 0.75;
+          cells += `<i class="as-cell" style="left:${gx + q * pitch + 3}px;top:${gy + r * pitch + 3}px;--sx:${sx.toFixed(0)}px;--sy:${sy.toFixed(0)}px;--rot:${(n * 47) % 360}deg;--d:${((n * 0.37) % 1 * 0.75).toFixed(2)}s;--g:${(n * 0.035).toFixed(2)}s"></i>`;
+        }
+        strips += `<b class="as-strip" style="left:${gx - 6}px;top:${gy + r * pitch + 21}px;width:${W0 + 12}px;--d:${(r * 0.12).toFixed(2)}s"></b>`;
+      }
+      const pad = 34, bx = gx - pad, by = gy - pad, bw = W0 + pad * 2, bh = H0 + pad * 2, per = 2 * (bw + bh);
+      return `
+        <div class="as-scene">
+          <div class="as-bg"></div>
+          <div class="as-grid">${cells}${strips}</div>
+          <div class="as-bms" style="left:${640 - 150}px;top:${gy + H0 + 18}px"><span>BMS</span><i></i><i></i><i></i><em></em></div>
+          <svg class="as-case" viewBox="0 0 1280 720" preserveAspectRatio="none">
+            <rect class="as-lid" x="${bx}" y="${by}" width="${bw}" height="${bh + 70}" rx="22"/>
+            <rect class="as-edge" x="${bx}" y="${by}" width="${bw}" height="${bh + 70}" rx="22" style="stroke-dasharray:${per + 140};stroke-dashoffset:${per + 140}"/>
+          </svg>
+          ${C.company.logoWhite ? `<img class="as-logo" src="${esc(C.company.logoWhite)}" alt="" style="top:${by + (bh + 70) / 2 - 28}px">` : ""}
+          <div class="as-label"><span data-k="asl">Assembling</span></div>
+        </div>`;
+    }
+
     function build() {
       const lines = (INTRO.lines || []).map((l, i) => `<span class="il" style="--i:${i}">${esc(l)}</span>`).join("");
       const closing = (INTRO.closing || "").split(".").filter((x) => x.trim())
@@ -1594,7 +1838,7 @@
             <div class="in-closing">${closing}</div>
           </div>
         </div>
-        ${droneScene()}
+        ${assembleScene()}
         <div class="in-pulse"></div>
         <div class="in-eye">${eyeSVG()}</div>
         <div class="in-skip">Press any key to skip</div>`;
@@ -1622,6 +1866,7 @@
 
     const at = (ms, fn) => timers.push(setTimeout(fn, ms));
     const addC = (cls) => box.classList.add(cls);
+    const setAs = (t) => { const el = box.querySelector('[data-k="asl"]'); if (el) el.textContent = t; };
     const line = (n) => { const t = (VO.intro || [])[n]; if (t) Voice.say("intro-" + (n + 1), t, { rate: 0.82, pitch: 0.62 }); };
 
     function hudRun(fromAlt, toAlt, fromSpd, toSpd, ms) {
@@ -1665,16 +1910,19 @@
         [5650,  () => addC("e-right")],
         [6200,  () => addC("e-center")],
         [6500,  () => { addC("e-dilate"); SFX.shimmer(); }],
-        [7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); }], // dive through the pupil
-        [8000,  () => { addC("d-aerial"); SFX.rotorStart(); hudRun(120, 96, 0, 24, 1600); }],
-        [9700,  () => { addC("d-descend"); SFX.rotorRise(1.2); hudRun(96, 3, 24, 42, 1100); }],
-        [10800, () => { addC("d-fly"); SFX.rotorRise(2); SFX.whoosh(2.2, true); hudRun(3, 2, 42, 86, 2100); }],
-        [12900, () => { addC("d-impact"); SFX.rotorStop(); SFX.boom(); }],   // the hit
-        [13300, () => line(2)],                                   // "Every step. Every customer."
-        [13900, () => { addC("p-charge"); SFX.charge(); SFX.padStart(0.045); }],
+        [7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); }],        // dive through the pupil
+        [8000,  () => { addC("as-fly"); setAs("Cells"); SFX.whoosh(1.2); }],    // cells fly into the grid
+        [8350,  () => SFX.beep()], [8700, () => SFX.beep()], [9050, () => SFX.beep()],
+        [9900,  () => { addC("as-weld"); setAs("Nickel strips"); SFX.shimmer(); }],
+        [10700, () => { addC("as-board"); setAs("BMS"); SFX.beep(); }],
+        [11400, () => { addC("as-wrap"); setAs("Casing"); SFX.whoosh(0.9); }],
+        [12300, () => { addC("as-seal"); setAs("Sealed"); SFX.heartbeat(); }],
+        [13000, () => { addC("d-impact"); SFX.charge(); SFX.shimmer(); }],      // the real Litpax pack powers on
+        [13300, () => line(2)],                                                  // "Every step. Every customer."
+        [13900, () => { addC("p-charge"); SFX.padStart(0.045); }],
         [15000, () => { addC("p-brand"); SFX.shimmer(); }],
-        [15700, () => { addC("p-lines"); line(3); }],             // "Every call answered. Every battery tracked."
-        [18400, () => { addC("p-close"); line(4); }],             // "Our quality. Our commitment. Our future."
+        [15700, () => { addC("p-lines"); line(3); }],                            // "Every call answered. Every battery tracked."
+        [18400, () => { addC("p-close"); line(4); }],                            // "Our quality. Our commitment. Our future."
         [22200, () => { addC("p-exit"); reveal(); }],
         [23200, finish]
       ];
@@ -1683,7 +1931,7 @@
     function skip() {
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
-      Voice.stop(); SFX.rotorStop(); SFX.padStart(0.045);
+      Voice.stop(); SFX.padStart(0.045);
       box.classList.add("p-dive", "d-impact", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
