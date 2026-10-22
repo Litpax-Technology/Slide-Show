@@ -12,16 +12,66 @@ window.PITCH_CONFIG = {
     name: "Litpax Technology Pvt. Ltd.",
     shortName: "LITPAX",
     logo: "assets/logo.png",
+    logoWhite: "assets/logo-white.png",   // used on dark screens (intro, ambition)
+    product: "assets/battery.png",        // real product photo on the title slide
     tagline: "Lithium Battery Manufacturing",
     location: "Haryana, India",
     about:
       "We manufacture lithium battery packs — and we run every step of the business on our own connected digital system. From your first enquiry to after-sales service, every order, every battery and every action is tracked.",
     contact: {
-      phone: "",
+      phone: "1800-309-8399 (Toll-free)",   // as printed on the battery label — verify
       email: "",
-      website: "",
+      website: "www.litpaxtechnology.com",  // as printed on the battery label — verify
       address: "Haryana, India"
     }
+  },
+
+  /* ---------- TAGLINES (from the Litpax Workspace + Service Hub login pages) ---------- */
+  taglines: {
+    title: "Order to delivery, fully connected.",
+    end: "Our quality. Our commitment. Our future."
+  },
+
+  /* ---------- CINEMATIC INTRO (plays when the deck opens; any key skips, "I" replays) ---------- */
+  intro: {
+    enabled: true,
+    battery: "assets/battery.png",
+    chargeLabel: "Litpax 74V · Charging",
+    lines: ["Every call answered.", "Every battery tracked."],
+    closing: "Our quality. Our commitment. Our future."
+  },
+
+  /* ---------- AMBITION slide (Milestone 2027) ---------- */
+  ambition: {
+    kicker: "Milestone 2027",
+    team: "One team · One goal",
+    headline: "defect",
+    headline2: "in manufacturing.",
+    sub: "One team. One goal. Every pack, right the first time.",
+    quote: "Your only limit is your mind.",
+    values: ["Goal", "Vision", "Admire", "Support", "Team Work", "Performance", "Success"],
+    closing: ["Our quality.", "Our commitment.", "Our future."]
+  },
+
+  /* ---------- MILESTONES timeline (slide appears only when this list has items) ----------
+     Example:
+     milestones: [
+       { year: "2019", title: "Company founded", desc: "First lithium packs" },
+       { year: "2022", title: "Second production hall" },
+       { year: "2027", title: "0% defect", desc: "Milestone goal", goal: true }
+     ], */
+  milestones: [],
+
+  /* ---------- THE LITPAX PROMISE slide (from the Service Hub login) ---------- */
+  promise: {
+    kicker: "The Litpax Promise",
+    lead: "We don't just sell",
+    strike: "products.",
+    sell: "We sell",
+    words: ["service.", "support.", "trust.", "uptime."],
+    line: "Every call answered. Every battery tracked.",
+    sub: "From the first ring to the final dispatch, one ticket keeps every customer in the loop.",
+    flow: ["Call", "Service", "Repair", "Dispatch"]
   },
 
   /* Headline numbers on the "At a glance" slide — edit freely */
