@@ -329,8 +329,30 @@
   const chainSlidePos = slides.length;
   slides.push({ title: "The chain", cls: "s-chain", hero: "chain", html: "" });
 
-  // 4. Step slides
+  // 4. Step slides (with a cinematic chapter divider before each phase)
+  const PH = C.phaseLines || {};
+  let lastPhase = null;
   C.steps.forEach((s, i) => {
+    if (s.phase !== lastPhase) {
+      lastPhase = s.phase;
+      const pi = C.phases.indexOf(s.phase), inPh = C.steps.filter((x) => x.phase === s.phase);
+      slides.push({
+        title: `${pad(pi + 1)} · ${s.phase}`, cls: "s-div", hero: "div", vkey: "phase-" + s.phase,
+        html: `
+          <div class="div-bg"><b>${pad(pi + 1)}</b></div>
+          <div class="slide-top">
+            <div class="logo logo-sm logo-white">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}" onerror="this.remove()">` : ""}<span>${esc(C.company.shortName)}</span></div>
+            <span class="slide-kicker">Chapter ${pi + 1} of ${C.phases.length}</span>
+          </div>
+          <div class="div-wrap">
+            <div class="div-num rv">${pad(pi + 1)}</div>
+            <h2 class="div-name rv">${esc(s.phase)}</h2>
+            <p class="div-line rv">${esc(PH[s.phase] || "")}</p>
+            <div class="div-steps">${inPh.map((x) => `<span class="rv">${esc(x.title)}</span>`).join(`<i class="rv">${arrow}</i>`)}</div>
+          </div>
+          <div class="div-progress">${C.phases.map((p, j) => `<span class="${j < pi ? "done" : j === pi ? "on" : ""}">${esc(p)}</span>`).join("")}</div>`
+      });
+    }
     stepSlideIndex[s.id] = slides.length;
     slides.push({
       vkey: "step-" + s.id,
@@ -664,7 +686,7 @@
     "s-title": "title", "s-amb": "ambition", "s-miles": "miles", "s-glance": "glance", "s-chain": "chain",
     "s-trace": "trace", "s-fms": "fms", "s-control": "control", "s-gallery": "gallery",
     "s-promise": "promise", "s-why": "why", "s-end": "end",
-    "s-chal": "challenges", "s-gain": "gains", "s-track": "track", "s-vs": "versus", "s-prod": "products", "s-start": "start", "s-voices": "voices", "s-crm": "crm"
+    "s-chal": "challenges", "s-gain": "gains", "s-track": "track", "s-vs": "versus", "s-prod": "products", "s-start": "start", "s-voices": "voices", "s-crm": "crm", "s-div": ""
   };
 
   /* ---------- render ---------- */
@@ -676,6 +698,51 @@
   els.forEach((el) => {
     el.querySelectorAll(".rv").forEach((r, k) => r.style.setProperty("--d", k));
   });
+
+  // Headlines reveal word by word (mask slide-up)
+  els.forEach((el) => {
+    el.querySelectorAll(".slide-inner h1, .slide-inner h2").forEach((h) => {
+      if (h.closest(".sc")) return;
+      let w = 0;
+      const walk = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
+      const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
+      nodes.forEach((tn) => {
+        const frag = document.createDocumentFragment();
+        tn.textContent.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+          const o = document.createElement("span"); o.className = "wd";
+          const i = document.createElement("span"); i.textContent = part; i.style.setProperty("--w", w++);
+          o.appendChild(i); frag.appendChild(o);
+        });
+        tn.parentNode.replaceChild(frag, tn);
+      });
+      h.classList.add("words");
+    });
+  });
+
+  // Chapter markers on the progress bar
+  const progress = document.getElementById("progress");
+  els.forEach((el, i) => {
+    if (!el.classList.contains("s-div")) return;
+    const m = document.createElement("i");
+    m.className = "chap"; m.style.left = (i / els.length) * 100 + "%";
+    m.title = el.getAttribute("aria-label");
+    m.onclick = () => go(i);
+    progress.appendChild(m);
+  });
+
+  // Accent sweep line on every slide change
+  const sweep = document.createElement("div");
+  sweep.id = "sweep"; document.body.appendChild(sweep);
+
+  // Glass HUD hides itself while presenting; mouse movement brings it back
+  let hudTimer = null;
+  const wakeHud = () => {
+    document.body.classList.add("hud-awake");
+    clearTimeout(hudTimer); hudTimer = setTimeout(() => document.body.classList.remove("hud-awake"), 2600);
+  };
+  document.addEventListener("mousemove", wakeHud); wakeHud();
 
   /* =========================================================
      ANIMATION ENGINE
@@ -1289,6 +1356,11 @@
         await c.wait(350); st[i].classList.add("on"); await c.wait(500);
       }
     },
+    div: async (el, c) => {
+      el.classList.remove("go"); void el.offsetWidth;
+      await c.wait(150); el.classList.add("go");
+      SFX.whoosh(1.4, true);
+    },
     crm: async (el, c) => {
       const k = K(el), you = el.querySelector(".crm-you"), plant = el.querySelector(".crm-plant");
       [k("sales"), k("service")].forEach((x) => x.classList.remove("in", "lit"));
@@ -1407,7 +1479,7 @@
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     };
     api.ready = () => !!ac;
-    api.setMuted = (m) => { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ac.currentTime, 0.05); };
+    api.setMuted = (m) => { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ac.currentTime, 0.05); if (fileMusic) fileMusic.muted = m; };
     api.isMuted = () => muted;
     const now = () => ac.currentTime;
     const gainEnv = (t, a, d, peak, dest) => {
@@ -1501,8 +1573,102 @@
       });
     };
     api.tick = () => api.whoosh(0.45, false);
+    // Background music: slow cinematic progression (Am9 – Fmaj7 – Cadd9 – G6), soft pads,
+    // a gentle piano-like arpeggio and a sub bass, all through a generated reverb.
+    let music = null, musicLevel = 0.06;
+    const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    const impulse = (sec) => {
+      const len = ac.sampleRate * sec, b = ac.createBuffer(2, len, ac.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+      return b;
+    };
+    api.musicStart = (level) => {
+      if (!ac || music) return;
+      musicLevel = level || musicLevel;
+      const out = ac.createGain(); out.gain.setValueAtTime(0.0001, now()); out.gain.exponentialRampToValueAtTime(musicLevel, now() + 5); out.connect(master);
+      const conv = ac.createConvolver(); conv.buffer = impulse(3.4);
+      const wet = ac.createGain(); wet.gain.value = 0.6; const dry = ac.createGain(); dry.gain.value = 0.65;
+      const bus = ac.createGain(); bus.connect(dry); bus.connect(conv); conv.connect(wet); dry.connect(out); wet.connect(out);
+      const chords = [
+        { bass: 45, notes: [57, 60, 64, 71] }, { bass: 41, notes: [53, 57, 60, 64] },
+        { bass: 48, notes: [55, 60, 62, 64] }, { bass: 43, notes: [55, 59, 62, 64] }
+      ];
+      const beat = 60 / 80, chordLen = beat * 4;
+      let t0 = now() + 0.1, step = 0;
+      const pad = (fq, t, dur) => {
+        [0, 7].forEach((det, j) => {
+          const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+          o.type = j ? "sawtooth" : "triangle"; o.frequency.value = fq; o.detune.value = j ? det : -4;
+          f.type = "lowpass"; f.frequency.value = j ? 900 : 1500;
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(j ? 0.018 : 0.05, t + 0.9);
+          g.gain.setValueAtTime(j ? 0.018 : 0.05, t + dur - 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 1.4);
+          o.connect(f); f.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 1.6);
+        });
+      };
+      const pluck = (fq, t, v) => {
+        const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+        o.type = "sine"; o2.type = "triangle"; o.frequency.value = fq; o2.frequency.value = fq * 2;
+        const g2 = ac.createGain(); g2.gain.value = 0.18; o2.connect(g2); g2.connect(g);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+        o.connect(g); g.connect(bus); o.start(t); o2.start(t); o.stop(t + 1.2); o2.stop(t + 1.2);
+      };
+      const sub = (fq, t, dur) => {
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.value = fq;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.1);
+      };
+      const arp = [0, 1, 2, 3, 2, 1, 3, 2];
+      const tick = () => {
+        if (!music) return;
+        while (t0 < now() + 0.8) {
+          const ch = chords[Math.floor(step / 8) % chords.length], i = step % 8, t = t0;
+          if (i === 0) { ch.notes.forEach((n) => pad(mtof(n), t, chordLen)); sub(mtof(ch.bass), t, chordLen * 0.9); }
+          if (step >= 16) pluck(mtof(ch.notes[arp[i]] + 12), t, i % 4 === 0 ? 0.05 : 0.032);   // arpeggio joins after 2 bars
+          step++; t0 += beat / 2;
+        }
+      };
+      music = { out, timer: setInterval(tick, 200) };
+      tick();
+    };
+    api.musicLevel = (lvl, sec) => { musicLevel = lvl; if (music) music.out.gain.setTargetAtTime(lvl, now(), (sec || 1) / 3); };
+    api.riser = (sec) => {
+      if (!ac) return;
+      sec = sec || 1.6; const t = now(), n = noise(), f = ac.createBiquadFilter(), o = ac.createOscillator();
+      f.type = "bandpass"; f.Q.value = 3; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(5000, t + sec);
+      n.connect(f); f.connect(gainEnv(t, sec * 0.95, 0.08, 0.35)); n.start(t); n.stop(t + sec + 0.1);
+      o.type = "sawtooth"; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(880, t + sec);
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400; o.connect(lp); lp.connect(gainEnv(t, sec * 0.95, 0.08, 0.06)); o.start(t); o.stop(t + sec + 0.1);
+    };
+    api.drop = () => {
+      if (!ac) return;
+      const t = now(), o = ac.createOscillator(); o.type = "sine";
+      o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(32, t + 2.2);
+      o.connect(gainEnv(t, 0.02, 2.6, 1.0)); o.start(t); o.stop(t + 2.8);
+      api.shimmer();
+    };
+
     let padLevel = 0.045;
-    api.duck = (on) => { if (!pad || !ac) return; pad.out.gain.setTargetAtTime(on ? padLevel * 0.25 : padLevel, ac.currentTime, 0.25); };
+    api.duck = (on) => {
+      if (!ac) return;
+      if (pad) pad.out.gain.setTargetAtTime(on ? padLevel * 0.25 : padLevel, ac.currentTime, 0.25);
+      if (music) music.out.gain.setTargetAtTime(on ? musicLevel * 0.3 : musicLevel, ac.currentTime, 0.3);
+      if (fileMusic) fileMusic.volume = on ? fileVol * 0.3 : fileVol;
+    };
+    // Optional real music file (config.music) — used instead of the generated track when it exists
+    let fileMusic = null, fileVol = 0.35;
+    api.useFile = (src, vol) => {
+      if (!src || fileMusic) return Promise.resolve(false);
+      fileVol = vol || fileVol;
+      return new Promise((res) => {
+        const a = new Audio(src); a.loop = true; a.volume = fileVol;
+        a.onerror = () => res(false);
+        a.play().then(() => { fileMusic = a; res(true); }).catch(() => res(false));
+      });
+    };
+    api.music = (level) => {
+      if (fileMusic) return;
+      api.useFile(C.music, C.musicVolume).then((ok) => { if (!ok) api.musicStart(level); });
+    };
     // ambient background pad (A minor 9), very quiet, slowly breathing
     api.padStart = (level) => {
       if (!ac || pad) return;
@@ -1523,7 +1689,7 @@
      NARRATION — plays assets/voice/<key>.mp3 when present,
      otherwise the most natural deep male voice the browser has.
      ========================================================= */
-  const VO = Object.assign({ enabled: true, autoAdvance: false, rate: 0.94, pitch: 1, folder: "assets/voice/", lines: {}, intro: [] }, C.voice || {});
+  const VO = Object.assign({ enabled: true, autoAdvance: false, rate: 0.92, pitch: 1, folder: "assets/voice/", lines: {}, intro: [] }, C.voice || {});
   const Voice = (function () {
     const synth = window.speechSynthesis;
     let voice = null, audio = null, token = 0;
@@ -1557,13 +1723,17 @@
       const done = () => { if (my === token && opts.onend) opts.onend(true); };
       const tts = () => {
         if (my !== token || !synth) return done();
-        const u = new SpeechSynthesisUtterance(text);
-        if (voice) u.voice = voice;
-        u.lang = (voice && voice.lang) || "en-IN";
-        u.rate = opts.rate || VO.rate; u.pitch = opts.pitch || VO.pitch; u.volume = 1;
-        u.onstart = () => SFX.duck(true);
-        u.onend = () => { SFX.duck(false); done(); }; u.onerror = () => { SFX.duck(false); done(); };
-        synth.speak(u);
+        // short phrases spoken one after another sound far more natural than one long utterance
+        const parts = text.replace(/\.\.\./g, "…").split(/(?<=[.?!…])\s+|\s+(?=—)/).map((x) => x.trim()).filter(Boolean);
+        parts.forEach((part, i) => {
+          const u = new SpeechSynthesisUtterance(part);
+          if (voice) u.voice = voice;
+          u.lang = (voice && voice.lang) || "en-IN";
+          u.rate = opts.rate || VO.rate; u.pitch = opts.pitch || VO.pitch; u.volume = 1;
+          if (i === 0) u.onstart = () => SFX.duck(true);
+          if (i === parts.length - 1) { u.onend = () => { SFX.duck(false); done(); }; u.onerror = () => { SFX.duck(false); done(); }; }
+          synth.speak(u);
+        });
       };
       if (!key) return tts();
       const a = new Audio(VO.folder + key + ".mp3");
@@ -1584,7 +1754,7 @@
     c.wait(700).then(() => Voice.say(key, text, {
       onend: (spoke) => {
         if (!autoAdvance || !spoke) return;
-        c.wait(1400).then(() => { if (cur === idx && cur < els.length - 1) go(cur + 1); });
+        c.wait(1400).then(() => { if (cur === idx) next(); });
       }
     }));
   }
@@ -1606,6 +1776,7 @@
   function toggleSound() {
     SFX.init();
     SFX.setMuted(!SFX.isMuted());
+    if (!SFX.isMuted()) SFX.music(0.06);
     if (SFX.isMuted()) Voice.stop();
     else if (els[cur]) narrate(els[cur], activeCtx || makeCtx());
     paintHud();
@@ -1671,6 +1842,10 @@
   const counter = document.getElementById("counter");
   const bar = document.querySelector("#progress span");
 
+  function next() {
+    if (cur >= els.length - 1) { if (typeof intro !== "undefined" && intro.outro) intro.outro(); return; }
+    go(cur + 1);
+  }
   function go(n) {
     n = Math.max(0, Math.min(els.length - 1, n));
     if (n !== cur || !activeCtx) startSlide(els[n]);
@@ -1681,6 +1856,7 @@
     cur = n;
     counter.textContent = `${n + 1} / ${els.length}`;
     bar.style.width = `${((n + 1) / els.length) * 100}%`;
+    sweep.classList.remove("go"); void sweep.offsetWidth; sweep.classList.add("go");
     try { history.replaceState(null, "", `#${n + 1}`); } catch (e) {}
   }
 
@@ -1696,7 +1872,7 @@
   });
 
   document.getElementById("btnPrev").onclick = () => go(cur - 1);
-  document.getElementById("btnNext").onclick = () => go(cur + 1);
+  document.getElementById("btnNext").onclick = () => next();
   document.getElementById("btnFull").onclick = toggleFull;
 
   function toggleFull() {
@@ -1726,13 +1902,15 @@
   document.addEventListener("keydown", (e) => {
     if (e.target.closest && e.target.closest("input,textarea")) return;
     const k = e.key;
+    if (intro.outroOn) { e.preventDefault(); return intro.outroKey(); }
     if (intro.waiting) { e.preventDefault(); return intro.start(); }
     if (intro.running) { e.preventDefault(); return intro.skip(); }
     if (k === "i" || k === "I") return intro.play();
+    if ((k === "e" || k === "E") && intro.outro) return intro.outro();
     if (k === "m" || k === "M") return toggleSound();
     if (k === "a" || k === "A") return toggleAuto();
     if (!ov.hidden && k === "Escape") return closeOv();
-    if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); go(cur + 1); }
+    if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); next(); }
     else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); go(cur - 1); }
     else if (k === "Home") go(0);
     else if (k === "End") go(els.length - 1);
@@ -1744,9 +1922,9 @@
   let tx = null, ty = null;
   document.addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
   document.addEventListener("touchend", (e) => {
-    if (tx == null || intro.running || intro.waiting) return;
+    if (tx == null || intro.running || intro.waiting || intro.outroOn) return;
     const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(cur + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) (dx < 0 ? next() : go(cur - 1));
     tx = ty = null;
   });
 
@@ -1914,6 +2092,7 @@
       return `
         <div class="as-scene">
           <div class="as-bg"></div>
+          <div class="as-rig">
           <div class="as-grid">${cells}${strips}</div>
           <div class="as-bms" style="left:${640 - 150}px;top:${gy + H0 + 18}px"><span>BMS</span><i></i><i></i><i></i><em></em></div>
           <svg class="as-case" viewBox="0 0 1280 720" preserveAspectRatio="none">
@@ -1921,9 +2100,16 @@
             <rect class="as-edge" x="${bx}" y="${by}" width="${bw}" height="${bh + 70}" rx="22" style="stroke-dasharray:${per + 140};stroke-dashoffset:${per + 140}"/>
           </svg>
           ${C.company.logoWhite ? `<img class="as-logo" src="${esc(C.company.logoWhite)}" alt="" style="top:${by + (bh + 70) / 2 - 28}px">` : ""}
+          </div>
           <div class="as-label"><span data-k="asl">Assembling</span></div>
         </div>`;
     }
+
+    const fxLayers = () => `
+        <div class="fx-grain"></div><div class="fx-vig"></div>
+        <div class="lb t"></div><div class="lb b"></div>`;
+    const sparks = (n) => Array.from({ length: n }, (_, i) =>
+      `<i style="left:${(i * 37) % 100}%;--dl:${((i * 0.29) % 3).toFixed(2)}s;--du:${(3 + (i % 5) * 0.6).toFixed(1)}s;--sz:${2 + (i % 3)}px"></i>`).join("");
 
     function build() {
       const lines = (INTRO.lines || []).map((l, i) => `<span class="il" style="--i:${i}">${esc(l)}</span>`).join("");
@@ -1933,6 +2119,8 @@
         <div class="in-scene">
           <div class="in-bg"></div>
           <div class="in-rays"></div>
+          <div class="in-sparks">${sparks(28)}</div>
+          <div class="in-flare"></div>
           <div class="in-batt">
             ${batterySVG()}
             <div class="in-charge"><span>${esc(INTRO.chargeLabel || "Charging")}</span><div class="in-bar"><i></i></div></div>
@@ -1946,6 +2134,8 @@
         ${assembleScene()}
         <div class="in-pulse"></div>
         <div class="in-eye">${eyeSVG()}</div>
+        <div class="in-card"><span>${esc(C.company.name.replace(/ Pvt\. Ltd\.?/i, ""))}</span><em>presents</em></div>
+        ${fxLayers()}
         <div class="in-skip">Press any key to skip</div>`;
     }
 
@@ -2002,42 +2192,46 @@
       box.className = "";
       box.style.setProperty("--cover", Math.max(window.innerWidth / 1280, window.innerHeight / 720));
       void box.offsetWidth;
+      const D = 2600;   // the opening title card plays first
       const T = [
-        [100,   () => { addC("p-pulse"); SFX.heartbeat(); }],
-        [500,   () => line(0)],                                   // "Every great product begins… with how you see it."
-        [1250,  () => SFX.heartbeat()],
-        [2400,  () => { addC("e-closed"); SFX.heartbeat(); }],
-        [3700,  () => addC("e-peek")],
-        [4150,  () => addC("e-blink")],
-        [4450,  () => { addC("e-open"); SFX.whoosh(0.8); }],
-        [4700,  () => line(1)],                                   // "At Litpax… we see every battery."
-        [5100,  () => addC("e-left")],
-        [5650,  () => addC("e-right")],
-        [6200,  () => addC("e-center")],
-        [6500,  () => { addC("e-dilate"); SFX.shimmer(); }],
-        [7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); }],        // dive through the pupil
-        [8000,  () => { addC("as-fly"); setAs("Cells"); SFX.whoosh(1.2); }],    // cells fly into the grid
-        [8350,  () => SFX.beep()], [8700, () => SFX.beep()], [9050, () => SFX.beep()],
-        [9900,  () => { addC("as-weld"); setAs("Nickel strips"); SFX.shimmer(); }],
-        [10700, () => { addC("as-board"); setAs("BMS"); SFX.beep(); }],
-        [11400, () => { addC("as-wrap"); setAs("Casing"); SFX.whoosh(0.9); }],
-        [12300, () => { addC("as-seal"); setAs("Sealed"); SFX.heartbeat(); }],
-        [13000, () => { addC("d-impact"); SFX.charge(); SFX.shimmer(); }],      // the real Litpax pack powers on
-        [13300, () => line(2)],                                                  // "Every step. Every customer."
-        [13900, () => { addC("p-charge"); SFX.padStart(0.045); }],
-        [15000, () => { addC("p-brand"); SFX.shimmer(); }],
-        [15700, () => { addC("p-lines"); line(3); }],                            // "Every call answered. Every battery tracked."
-        [18400, () => { addC("p-close"); line(4); }],                            // "Our quality. Our commitment. Our future."
-        [22200, () => { addC("p-exit"); reveal(); }],
-        [23200, finish]
+        [150,   () => { addC("p-card"); SFX.music(0.03); }],
+        [2300,  () => addC("p-card-out")],
+        [D + 100,   () => { addC("p-pulse"); SFX.heartbeat(); }],
+        [D + 500,   () => line(0)],                                   // "Every great product begins… with how you see it."
+        [D + 1250,  () => SFX.heartbeat()],
+        [D + 2400,  () => { addC("e-closed"); SFX.heartbeat(); }],
+        [D + 3700,  () => addC("e-peek")],
+        [D + 4150,  () => addC("e-blink")],
+        [D + 4450,  () => { addC("e-open"); SFX.whoosh(0.8); }],
+        [D + 4700,  () => line(1)],                                   // "At Litpax… we see every battery."
+        [D + 5100,  () => addC("e-left")],
+        [D + 5650,  () => addC("e-right")],
+        [D + 6200,  () => addC("e-center")],
+        [D + 6500,  () => { addC("e-dilate"); SFX.shimmer(); }],
+        [D + 7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); SFX.musicLevel(0.045, 2); }],
+        [D + 8000,  () => { addC("as-fly"); setAs("Cells"); SFX.whoosh(1.2); }],
+        [D + 8350,  () => SFX.beep()], [D + 8700, () => SFX.beep()], [D + 9050, () => SFX.beep()],
+        [D + 9900,  () => { addC("as-weld"); setAs("Nickel strips"); SFX.shimmer(); }],
+        [D + 10700, () => { addC("as-board"); setAs("BMS"); SFX.beep(); }],
+        [D + 11400, () => { addC("as-wrap"); setAs("Casing"); SFX.whoosh(0.9); }],
+        [D + 11500, () => SFX.riser(1.5)],
+        [D + 12300, () => { addC("as-seal"); setAs("Sealed"); }],
+        [D + 13000, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],   // power on
+        [D + 13300, () => line(2)],                                   // "Every step. Every customer."
+        [D + 13900, () => addC("p-charge")],
+        [D + 15000, () => { addC("p-brand"); SFX.shimmer(); }],
+        [D + 15700, () => { addC("p-lines"); line(3); }],             // "Every call answered. Every battery tracked."
+        [D + 18400, () => { addC("p-close"); line(4); }],             // "Our quality. Our commitment. Our future."
+        [D + 22200, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
+        [D + 23200, finish]
       ];
       T.forEach(([ms, fn]) => at(ms, fn));
     }
     function skip() {
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
-      Voice.stop(); SFX.padStart(0.045);
-      box.classList.add("p-dive", "d-impact", "p-exit", "fast");
+      Voice.stop(); SFX.music(0.055);
+      box.classList.add("p-card-out", "p-dive", "d-impact", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
     }
@@ -2054,7 +2248,82 @@
       box.hidden = true; box.className = ""; box.innerHTML = "";
       api.running = false;
     }
-    box.addEventListener("click", () => { if (api.waiting) start(); else skip(); });
+
+    /* ---------- CINEMATIC OUTRO: full charge → logo from particles → taglines → the eye closes ---------- */
+    let oTimers = [];
+    api.outroOn = false; api.outroEnd = false;
+    function outro() {
+      if (api.running || api.outroOn) return;
+      api.outroOn = true; api.outroEnd = false;
+      if (activeCtx) { activeCtx.stop(); activeCtx = null; }
+      Voice.stop();
+      oTimers.forEach(clearTimeout); oTimers = [];
+      const ct = C.company.contact || {};
+      const closing = (INTRO.closing || "").split(".").filter((x) => x.trim()).map((x, i) => `<span style="--i:${i}">${esc(x.trim())}.</span>`).join("");
+      let dots = "";
+      for (let i = 0; i < 90; i++) {
+        const a = (i * 137.5) % 360, r = 380 + (i % 7) * 60;
+        dots += `<i style="--tx:${(((i * 53) % 100) - 50) * 3.2}px;--ty:${(((i * 29) % 100) - 50) * 0.9}px;--sx:${(Math.cos(a * Math.PI / 180) * r).toFixed(0)}px;--sy:${(Math.sin(a * Math.PI / 180) * r * 0.7).toFixed(0)}px;--dl:${((i % 30) * 0.02).toFixed(2)}s"></i>`;
+      }
+      box.innerHTML = `
+        <div class="ot-bg"></div>
+        <div class="in-sparks">${sparks(26)}</div>
+        <div class="ot-batt">${batterySVG()}<div class="ot-charge"><b><span data-k="pct">0</span>%</b><div class="in-bar"><i data-k="obar"></i></div></div></div>
+        <div class="ot-burst"></div>
+        <div class="ot-logo"><div class="ot-dots">${dots}</div>${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b>${esc(C.company.shortName)}</b>`}</div>
+        <div class="ot-lines">${closing}</div>
+        <div class="ot-build">${esc((C.outro && C.outro.headline) || "Let's build together.")}</div>
+        <div class="ot-contact">${[ct.phone, ct.website, ct.email].filter(Boolean).map(esc).join("<i>·</i>")}</div>
+        <div class="out-eye">${eyeSVG()}</div>
+        <div class="ot-end"><span>${esc(C.company.name)}</span><em>Press any key to return</em></div>
+        ${fxLayers()}`;
+      box.hidden = false; box.className = "outro";
+      box.style.setProperty("--cover", Math.max(window.innerWidth / 1280, window.innerHeight / 720));
+      void box.offsetWidth;
+      const oc = (cls) => box.classList.add(cls);
+      const oat = (ms, fn) => oTimers.push(setTimeout(fn, ms));
+      const say = (n) => { const t = (VO.outro || [])[n]; if (t) Voice.say("outro-" + (n + 1), t, { rate: 0.88 }); };
+      const charge = () => {
+        const pct = box.querySelector('[data-k="pct"]'), bar = box.querySelector('[data-k="obar"]'), t0 = performance.now();
+        const tick = (t) => {
+          if (!api.outroOn) return;
+          const p = Math.min(1, (t - t0) / 2200), e = 1 - Math.pow(1 - p, 2);
+          pct.textContent = Math.round(e * 100); bar.style.width = e * 100 + "%";
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      };
+      [
+        [50,    () => { oc("o-on"); SFX.whoosh(1.4, true); SFX.musicLevel(0.05, 1); }],
+        [800,   () => { oc("o-batt"); SFX.charge(); charge(); }],
+        [1500,  () => SFX.riser(1.5)],
+        [3100,  () => { oc("o-burst"); SFX.drop(); }],
+        [3600,  () => { oc("o-logo"); SFX.whoosh(1.2); }],
+        [4800,  () => { oc("o-logo-on"); SFX.shimmer(); say(0); }],        // "Litpax Technology."
+        [5800,  () => { oc("o-lines"); say(1); }],                        // "Our quality. Our commitment. Our future."
+        [9000,  () => { oc("o-build"); say(2); }],                        // "Let's build together."
+        [12600, () => { oc("o-eye"); SFX.musicLevel(0.03, 2); }],
+        [14000, () => { oc("o-shut"); SFX.heartbeat(); }],
+        [15600, () => { oc("o-black"); SFX.musicLevel(0.0001, 4); }],
+        [16600, () => { oc("o-end"); api.outroEnd = true; }]
+      ].forEach(([ms, fn]) => oat(ms, fn));
+    }
+    function outroKey() {
+      if (!api.outroOn) return;
+      if (!api.outroEnd) {                         // first key: jump to the final black frame
+        oTimers.forEach(clearTimeout); oTimers = [];
+        Voice.stop();
+        box.classList.add("o-on", "o-black", "o-end", "fast"); api.outroEnd = true;
+        SFX.musicLevel(0.0001, 1);
+        return;
+      }
+      box.hidden = true; box.className = ""; box.innerHTML = "";   // second key: back to the title slide
+      api.outroOn = false; api.outroEnd = false;
+      SFX.musicLevel(0.055, 2);
+      cur = -1; activeCtx = null; go(0);
+    }
+    api.outro = outro; api.outroKey = outroKey;
+    box.addEventListener("click", () => { if (api.waiting) start(); else if (api.outroOn) outroKey(); else skip(); });
     api.start = start;
     return api;
   })();
