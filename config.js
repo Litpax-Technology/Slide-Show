@@ -8,6 +8,10 @@
    ========================================================= */
 
 window.PITCH_CONFIG = {
+  /* Colour theme: "brand" (Litpax Ember — logo colours), "volt" (EV green),
+     "blue" (Electric Blue) or "indigo" (old). Preview any of them with ?theme=volt in the URL. */
+  theme: "brand",
+
   company: {
     name: "Litpax Technology Pvt. Ltd.",
     shortName: "LITPAX",
@@ -39,6 +43,58 @@ window.PITCH_CONFIG = {
     chargeLabel: "Litpax 74V · Charging",
     lines: ["Every call answered.", "Every battery tracked."],
     closing: "Our quality. Our commitment. Our future."
+  },
+
+  /* ---------- VOICE NARRATION (deep, calm male) ----------
+     - Each line is spoken when its slide opens.
+     - For a real studio voice, put MP3 files in assets/voice/ named after the key,
+       e.g. assets/voice/intro-1.mp3, assets/voice/title.mp3, assets/voice/step-lead.mp3.
+       If an MP3 exists it plays; otherwise the browser's best male voice reads the line
+       (Microsoft Edge has the most natural one — "Prabhat").
+     - Keys: M = sound on/off, A = auto-play (next slide after the voice ends). */
+  voice: {
+    enabled: true,
+    autoAdvance: false,
+    rate: 0.9,
+    pitch: 0.72,
+    folder: "assets/voice/",
+    intro: [
+      "Every great product begins... with how you see it.",
+      "At Litpax... we see every battery.",
+      "Every step. Every customer.",
+      "Every call answered. Every battery tracked.",
+      "Our quality. Our commitment. Our future."
+    ],
+    lines: {
+      "title": "Welcome to Litpax Technology. Let us show you how our system runs — from order to delivery, fully connected.",
+      "ambition": "Our goal is simple, and bold. Zero percent defect in manufacturing. One team. One goal. Every pack, right the first time.",
+      "miles": "Every milestone has brought us closer to that goal.",
+      "glance": "We build lithium battery packs in Haryana — and we run every part of our business on our own connected digital system.",
+      "chain": "Five stages. Sixteen connected steps. Sell, source, make, deliver and support — all in one flow.",
+      "step-lead": "Every enquiry becomes a tracked opportunity. No follow-up is missed.",
+      "step-quote": "Quotations are ready in minutes, with GST applied automatically.",
+      "step-dealer": "Every pin code is mapped to an authorised partner.",
+      "step-order": "Once you place an order, it moves through our ERP — and every stage is visible.",
+      "step-purchase": "Materials are ordered, tracked in transit, and received against every purchase order.",
+      "step-inventory": "Stock is live — from raw material, to work in progress, to finished goods.",
+      "step-production": "Every battery gets its own barcode — scanned at every station, along with the employee who built it.",
+      "step-quality": "Before every shift, standard checks are completed and time-stamped.",
+      "step-review": "Every day, every line: plan versus achieved. Gaps are caught the same day.",
+      "step-recon": "Material issued is matched with batteries built. Variance is caught before it becomes loss.",
+      "step-dispatch": "At dispatch, every battery is scanned against your order. Wrong model? Rejected instantly.",
+      "step-logistics": "Shipments are tracked until they reach you.",
+      "step-service": "When you call us, a ticket is created — and followed until it is solved.",
+      "step-warranty": "Warranty replacements follow a clear, approved flow, with a complete audit trail.",
+      "step-clientdash": "And you can see it all, live — your orders, service calls and repairs.",
+      "step-feedback": "Your feedback goes straight to our management, and shapes how we improve.",
+      "trace": "One barcode. Complete history. Where it was built, who built it, when it shipped — and every service since.",
+      "fms": "Above it all runs our flow management system. Every step has an owner, and a deadline.",
+      "control": "Our leadership sees the whole business on one screen — daily, and weekly.",
+      "gallery": "All of this runs on a family of apps, built in-house.",
+      "promise": "Because we don't just sell products. We sell service. Support. Trust. Uptime.",
+      "why": "Full traceability. Real-time visibility. Faster response. That is what partnering with Litpax means.",
+      "end": "Let's build together. Litpax Technology — our quality, our commitment, our future."
+    }
   },
 
   /* ---------- AMBITION slide (Milestone 2027) ---------- */
