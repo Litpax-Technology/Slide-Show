@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Litpax Technology — How Our System Runs</title>
   <meta name="description" content="How Litpax Technology runs every step — from enquiry to after-sales service — on one connected digital system.">
-  <link rel="icon" href="assets/logo.png">
+  <link rel="icon" href="assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <main id="viewport">
@@ -45,7 +45,10 @@
     </div>
   </div>
 
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <div id="intro" hidden></div>
+
+  <!-- ?v= forces browsers to load the new file after an update; bump it each time you upload -->
+  <script src="config.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
