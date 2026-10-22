@@ -6,6 +6,9 @@
   "use strict";
 
   const C = window.PITCH_CONFIG;
+  // colour theme: config.theme, or ?theme=brand in the URL for a quick preview
+  document.documentElement.dataset.theme =
+    new URLSearchParams(location.search).get("theme") || C.theme || "indigo";
   const stage = document.getElementById("stage");
   const W = 1280, H = 720;
 
@@ -199,6 +202,7 @@
   C.steps.forEach((s, i) => {
     stepSlideIndex[s.id] = slides.length;
     slides.push({
+      vkey: "step-" + s.id,
       title: `${pad(i + 1)} · ${s.title}`,
       cls: "s-step",
       html: chrome(`
@@ -415,9 +419,15 @@
       </div>`;
   }
 
+  const CLS2KEY = {
+    "s-title": "title", "s-amb": "ambition", "s-miles": "miles", "s-glance": "glance", "s-chain": "chain",
+    "s-trace": "trace", "s-fms": "fms", "s-control": "control", "s-gallery": "gallery",
+    "s-promise": "promise", "s-why": "why", "s-end": "end"
+  };
+
   /* ---------- render ---------- */
   stage.innerHTML = slides
-    .map((s, i) => `<section class="slide ${s.cls}" data-i="${i}"${s.hero ? ` data-hero="${s.hero}"` : ""} aria-label="${esc(s.title)}"><div class="slide-inner">${s.html}</div><div class="slide-num">${pad(i + 1)}</div></section>`)
+    .map((s, i) => `<section class="slide ${s.cls}" data-i="${i}" data-vkey="${s.vkey || CLS2KEY[s.cls] || ""}"${s.hero ? ` data-hero="${s.hero}"` : ""} aria-label="${esc(s.title)}"><div class="slide-inner">${s.html}</div><div class="slide-num">${pad(i + 1)}</div></section>`)
     .join("");
 
   const els = Array.from(stage.querySelectorAll(".slide"));
@@ -432,7 +442,7 @@
      ========================================================= */
   const fmtIN = (n) => Number(n).toLocaleString("en-IN");
   const qa = (root, s) => Array.from(root.querySelectorAll(s));
-  const on = (el) => el && el.classList.add("in");
+  const on = (el) => { if (!el) return; el.classList.add("in"); if (el.classList.contains("toast")) SFX.ding(); };
   const K = (r) => (s) => r.querySelector(`[data-k="${s}"]`);
 
   function makeCtx() {
@@ -669,8 +679,8 @@
       </div>`,
       run: async (r, c) => {
         const k = K(r), st = ["Cell sorting", "Assembly", "BMS fitting", "Testing"], tm = ["10:02", "10:18", "10:41", "11:05"];
-        await c.wait(600); k("emp").classList.add("ok", "flash"); k("empv").textContent = "EMP-027 · Assembly team";
-        await c.wait(900); k("bat").classList.add("ok", "flash"); k("batv").textContent = "LTX-48V-0000123";
+        await c.wait(600); k("emp").classList.add("ok", "flash"); SFX.beep(); k("empv").textContent = "EMP-027 · Assembly team";
+        await c.wait(900); k("bat").classList.add("ok", "flash"); SFX.beep(); k("batv").textContent = "LTX-48V-0000123";
         await c.wait(600); on(k("tok"));
         for (let i = 0; i < 4; i++) {
           k("tok").style.left = 12.5 + i * 25 + "%";
@@ -785,14 +795,14 @@
         const ok = async (n) => {
           const code = "LTX-48V-00001" + String(n).padStart(2, "0");
           k("code").textContent = code;
-          scn.classList.remove("bad"); scn.classList.add("ok");
+          scn.classList.remove("bad"); scn.classList.add("ok"); SFX.beep();
           k("cnt").textContent = n; k("pb").style.width = (n / 50) * 100 + "%";
           logRow(k("log"), `<span>${ICON.check} <b>${code}</b> · 48V 30Ah</span><em>#${n}</em>`, "okr", 3);
           await c.wait(160); scn.classList.remove("ok");
         };
         await c.wait(600);
         for (let n = 1; n <= 3; n++) { await ok(n); await c.wait(550); }
-        k("code").textContent = "LTX-60V-0000044"; scn.classList.add("bad");
+        k("code").textContent = "LTX-60V-0000044"; scn.classList.add("bad"); SFX.buzz();
         logRow(k("log"), `<span>${ICON.x} <b>LTX-60V-0000044</b> · wrong model</span><em>Rejected</em>`, "bad", 3);
         await c.wait(1400); scn.classList.remove("bad");
         await c.count(k("cnt"), 3, 49, 1000, (v) => v);
@@ -1063,6 +1073,227 @@
     }
   };
 
+  /* =========================================================
+     SOUND ENGINE — every sound is synthesised in code (Web Audio),
+     so there are no music files and no copyright issues.
+     ========================================================= */
+  const SFX = (function () {
+    let ac = null, master = null, noiseBuf = null, pad = null, rotor = null;
+    let muted = false;
+    const api = {};
+    api.init = () => {
+      if (ac) { if (ac.state === "suspended") ac.resume(); return; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = new AC();
+      master = ac.createGain(); master.gain.value = muted ? 0 : 0.9; master.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    };
+    api.ready = () => !!ac;
+    api.setMuted = (m) => { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ac.currentTime, 0.05); };
+    api.isMuted = () => muted;
+    const now = () => ac.currentTime;
+    const gainEnv = (t, a, d, peak, dest) => {
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + a);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + a + d);
+      g.connect(dest || master);
+      return g;
+    };
+    const noise = () => { const n = ac.createBufferSource(); n.buffer = noiseBuf; n.loop = true; return n; };
+
+    api.heartbeat = () => {
+      if (!ac) return;
+      [0, 0.26].forEach((o, i) => {
+        const t = now() + o, osc = ac.createOscillator();
+        osc.type = "sine"; osc.frequency.setValueAtTime(i ? 58 : 66, t); osc.frequency.exponentialRampToValueAtTime(34, t + 0.22);
+        osc.connect(gainEnv(t, 0.012, 0.3, i ? 0.55 : 0.8)); osc.start(t); osc.stop(t + 0.4);
+      });
+    };
+    api.whoosh = (dur, big) => {
+      if (!ac) return;
+      dur = dur || 1; const t = now(), n = noise(), f = ac.createBiquadFilter();
+      f.type = "bandpass"; f.Q.value = big ? 0.8 : 1.4;
+      f.frequency.setValueAtTime(big ? 180 : 400, t);
+      f.frequency.exponentialRampToValueAtTime(big ? 2600 : 2200, t + dur * 0.6);
+      f.frequency.exponentialRampToValueAtTime(big ? 220 : 500, t + dur);
+      n.connect(f); f.connect(gainEnv(t, dur * 0.5, dur * 0.5, big ? 0.55 : 0.18));
+      n.start(t); n.stop(t + dur + 0.1);
+    };
+    api.boom = () => {
+      if (!ac) return;
+      const t = now(), osc = ac.createOscillator();
+      osc.type = "sine"; osc.frequency.setValueAtTime(110, t); osc.frequency.exponentialRampToValueAtTime(28, t + 1.6);
+      osc.connect(gainEnv(t, 0.01, 2.2, 1.0)); osc.start(t); osc.stop(t + 2.4);
+      const n = noise(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(1800, t); f.frequency.exponentialRampToValueAtTime(120, t + 0.8);
+      n.connect(f); f.connect(gainEnv(t, 0.005, 0.9, 0.7)); n.start(t); n.stop(t + 1);
+    };
+    api.rotorStart = () => {
+      if (!ac || rotor) return;
+      const t = now(), out = ac.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.16, t + 0.8); out.connect(master);
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 700; lp.connect(out);
+      const trem = ac.createGain(); trem.gain.value = 0.6; trem.connect(lp);
+      const lfo = ac.createOscillator(), lfoG = ac.createGain(); lfo.frequency.value = 38; lfoG.gain.value = 0.4; lfo.connect(lfoG); lfoG.connect(trem.gain);
+      const o1 = ac.createOscillator(), o2 = ac.createOscillator();
+      o1.type = "sawtooth"; o2.type = "sawtooth"; o1.frequency.value = 96; o2.frequency.value = 99;
+      o1.connect(trem); o2.connect(trem); [o1, o2, lfo].forEach((o) => o.start(t));
+      rotor = { out, o1, o2, lfo, lp };
+    };
+    api.rotorRise = (sec) => {
+      if (!rotor) return;
+      const t = now();
+      rotor.o1.frequency.exponentialRampToValueAtTime(190, t + sec); rotor.o2.frequency.exponentialRampToValueAtTime(196, t + sec);
+      rotor.lfo.frequency.exponentialRampToValueAtTime(70, t + sec); rotor.lp.frequency.exponentialRampToValueAtTime(1600, t + sec);
+      rotor.out.gain.exponentialRampToValueAtTime(0.28, t + sec);
+    };
+    api.rotorStop = () => {
+      if (!rotor) return;
+      const r = rotor, t = now(); rotor = null;
+      r.out.gain.cancelScheduledValues(t); r.out.gain.setTargetAtTime(0.0001, t, 0.05);
+      [r.o1, r.o2, r.lfo].forEach((o) => o.stop(t + 0.4));
+    };
+    api.charge = () => {
+      if (!ac) return;
+      const t = now(), o = ac.createOscillator(); o.type = "triangle";
+      o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(720, t + 1.1);
+      o.connect(gainEnv(t, 0.2, 1.1, 0.12)); o.start(t); o.stop(t + 1.4);
+    };
+    api.shimmer = () => {
+      if (!ac) return;
+      [1320, 1760, 2217, 2637, 3520].forEach((fq, i) => {
+        const t = now() + i * 0.07, o = ac.createOscillator(); o.type = "sine"; o.frequency.value = fq;
+        o.connect(gainEnv(t, 0.01, 0.9, 0.06)); o.start(t); o.stop(t + 1);
+      });
+    };
+    api.beep = () => {
+      if (!ac) return;
+      const t = now(), o = ac.createOscillator(); o.type = "square"; o.frequency.value = 1850;
+      o.connect(gainEnv(t, 0.004, 0.07, 0.05)); o.start(t); o.stop(t + 0.1);
+    };
+    api.buzz = () => {
+      if (!ac) return;
+      const t = now(), o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = 140;
+      o.connect(gainEnv(t, 0.005, 0.28, 0.08)); o.start(t); o.stop(t + 0.32);
+    };
+    api.ding = () => {
+      if (!ac) return;
+      [1318.5, 1975.5].forEach((fq, i) => {
+        const t = now() + i * 0.09, o = ac.createOscillator(); o.type = "sine"; o.frequency.value = fq;
+        o.connect(gainEnv(t, 0.005, 0.7, 0.08)); o.start(t); o.stop(t + 0.8);
+      });
+    };
+    api.tick = () => api.whoosh(0.45, false);
+    // ambient background pad (A minor 9), very quiet, slowly breathing
+    api.padStart = (level) => {
+      if (!ac || pad) return;
+      const t = now(), out = ac.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(level || 0.05, t + 4); out.connect(master);
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(out);
+      const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 350; lfo.connect(lg); lg.connect(lp.frequency); lfo.start(t);
+      const oscs = [110, 164.81, 220, 261.63, 329.63, 493.88].map((fq, i) => {
+        const o = ac.createOscillator(); o.type = i % 2 ? "triangle" : "sine"; o.frequency.value = fq; o.detune.value = (i - 3) * 4;
+        const g = ac.createGain(); g.gain.value = i < 2 ? 0.5 : 0.25; o.connect(g); g.connect(lp); o.start(t); return o;
+      });
+      pad = { out, oscs, lfo };
+    };
+    return api;
+  })();
+
+  /* =========================================================
+     NARRATION — plays assets/voice/<key>.mp3 when present,
+     otherwise the most natural deep male voice the browser has.
+     ========================================================= */
+  const VO = Object.assign({ enabled: true, autoAdvance: false, rate: 0.9, pitch: 0.72, folder: "assets/voice/", lines: {}, intro: [] }, C.voice || {});
+  const Voice = (function () {
+    const synth = window.speechSynthesis;
+    let voice = null, audio = null, token = 0;
+    const prefer = [
+      /Prabhat/i, /Microsoft (Guy|Andrew|Brian|Christopher|Davis|Eric|Roger|Steffan|Ryan|Thomas).*Natural/i,
+      /Google UK English Male/i, /Daniel/i, /Microsoft (Ravi|David|Mark|George)/i, /en-IN/i, /en-GB/i, /^en/i
+    ];
+    function pick() {
+      if (!synth) return;
+      const vs = synth.getVoices();
+      if (!vs.length) return;
+      for (const re of prefer) {
+        const v = vs.find((x) => re.test(x.name) || re.test(x.lang));
+        if (v && !/female|Neerja|Heera|Zira|Aria|Jenny|Susan|Hazel|Samantha|Karen|Moira|Tessa|Veena/i.test(v.name)) { voice = v; return; }
+      }
+      voice = vs.find((x) => /^en/i.test(x.lang)) || vs[0];
+    }
+    if (synth) { pick(); synth.onvoiceschanged = pick; }
+    const api = {};
+    api.stop = () => {
+      token++;
+      if (audio) { audio.onended = audio.onerror = null; audio.pause(); audio = null; }
+      if (synth) synth.cancel();
+    };
+    api.say = (key, text, opts) => {
+      opts = opts || {};
+      api.stop();
+      if (!VO.enabled || SFX.isMuted() || !text) { if (opts.onend) opts.onend(false); return; }
+      const my = ++token;
+      const done = () => { if (my === token && opts.onend) opts.onend(true); };
+      const tts = () => {
+        if (my !== token || !synth) return done();
+        const u = new SpeechSynthesisUtterance(text);
+        if (voice) u.voice = voice;
+        u.lang = (voice && voice.lang) || "en-IN";
+        u.rate = opts.rate || VO.rate; u.pitch = opts.pitch || VO.pitch; u.volume = 1;
+        u.onend = done; u.onerror = done;
+        synth.speak(u);
+      };
+      if (!key) return tts();
+      const a = new Audio(VO.folder + key + ".mp3");
+      audio = a;
+      a.onended = done;
+      a.onerror = () => { if (audio === a) audio = null; tts(); };
+      a.play().catch(() => { if (audio === a) { audio = null; tts(); } });
+    };
+    return api;
+  })();
+
+  let autoAdvance = !!VO.autoAdvance;
+  function narrate(el, c) {
+    const key = el.dataset.vkey, text = VO.lines[key];
+    if (!text) { Voice.stop(); return; }
+    const idx = +el.dataset.i;
+    c.wait(700).then(() => Voice.say(key, text, {
+      onend: (spoke) => {
+        if (!autoAdvance || !spoke) return;
+        c.wait(1400).then(() => { if (cur === idx && cur < els.length - 1) go(cur + 1); });
+      }
+    }));
+  }
+
+  /* ---------- sound / auto-advance controls in the HUD ---------- */
+  const hud = document.querySelector(".hud");
+  const sndBtn = document.createElement("button");
+  const autoBtn = document.createElement("button");
+  const ICO_ON = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
+  const ICO_OFF = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 9l5 6M22 9l-5 6"/></svg>';
+  const ICO_AUTO = '<svg viewBox="0 0 24 24"><path d="M5 4l10 8-10 8zM17 5v14"/></svg>';
+  function paintHud() {
+    sndBtn.innerHTML = SFX.isMuted() ? ICO_OFF : ICO_ON;
+    sndBtn.title = SFX.isMuted() ? "Sound off (M)" : "Sound on (M)";
+    autoBtn.innerHTML = ICO_AUTO;
+    autoBtn.title = autoAdvance ? "Auto-play with voice: ON (A)" : "Auto-play with voice: OFF (A)";
+    autoBtn.classList.toggle("on", autoAdvance);
+  }
+  function toggleSound() {
+    SFX.init();
+    SFX.setMuted(!SFX.isMuted());
+    if (SFX.isMuted()) Voice.stop();
+    else if (els[cur]) narrate(els[cur], activeCtx || makeCtx());
+    paintHud();
+  }
+  function toggleAuto() { autoAdvance = !autoAdvance; paintHud(); }
+  sndBtn.onclick = toggleSound; autoBtn.onclick = toggleAuto;
+  if (hud) { const full = document.getElementById("btnFull"); hud.insertBefore(autoBtn, full); hud.insertBefore(sndBtn, full); }
+  paintHud();
+
   /* ---------- slide lifecycle ---------- */
   let activeCtx = null;
 
@@ -1098,6 +1329,8 @@
     const host = el.querySelector(".scene-host");
     if (host) runScene(host, c);
     if (el.dataset.hero && HEROES[el.dataset.hero]) HEROES[el.dataset.hero](el, c);
+    SFX.tick();
+    narrate(el, c);
   }
 
   // Pre-fill every scene once (so print / PDF shows the demo UI)
@@ -1172,8 +1405,11 @@
   document.addEventListener("keydown", (e) => {
     if (e.target.closest && e.target.closest("input,textarea")) return;
     const k = e.key;
+    if (intro.waiting) { e.preventDefault(); return intro.start(); }
     if (intro.running) { e.preventDefault(); return intro.skip(); }
     if (k === "i" || k === "I") return intro.play();
+    if (k === "m" || k === "M") return toggleSound();
+    if (k === "a" || k === "A") return toggleAuto();
     if (!ov.hidden && k === "Escape") return closeOv();
     if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); go(cur + 1); }
     else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); go(cur - 1); }
@@ -1187,7 +1423,7 @@
   let tx = null, ty = null;
   document.addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
   document.addEventListener("touchend", (e) => {
-    if (tx == null || intro.running) return;
+    if (tx == null || intro.running || intro.waiting) return;
     const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(cur + (dx < 0 ? 1 : -1));
     tx = ty = null;
@@ -1203,10 +1439,9 @@
      ========================================================= */
   const intro = (function () {
     const box = document.getElementById("intro");
-    const api = { running: false, play, skip };
+    const api = { running: false, waiting: false, play, skip, begin };
     if (!box || !INTRO.enabled) return api;
-    let timers = [], done = null;
-
+    let timers = [];
     // Illustrated human eye (SVG): almond lids with lashes, fibred iris, pupil, highlights
     function eyeSVG() {
       const P0 = [40, 150], P2 = [560, 150];
@@ -1245,16 +1480,16 @@
             <clipPath id="eyeClip"><path d="${almond}"/></clipPath>
             <radialGradient id="scl" cx="50%" cy="55%" r="60%"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eceaf9"/><stop offset="1" stop-color="#9e99c9"/></radialGradient>
             <radialGradient id="iri" cx="50%" cy="50%" r="50%">
-              <stop offset="0" stop-color="#0b0a1f"/><stop offset=".38" stop-color="#3b2f9e"/>
-              <stop offset=".5" stop-color="#d9a65a"/><stop offset=".58" stop-color="#7d6bff"/>
-              <stop offset=".82" stop-color="#635bff"/><stop offset="1" stop-color="#1e1b4b"/>
+              <stop offset="0" style="stop-color:var(--night-0)"/><stop offset=".38" style="stop-color:var(--accent-deep)"/>
+              <stop offset=".5" style="stop-color:var(--iris-warm)"/><stop offset=".58" style="stop-color:var(--accent-hi)"/>
+              <stop offset=".82" style="stop-color:var(--accent)"/><stop offset="1" style="stop-color:var(--indigo)"/>
             </radialGradient>
-            <linearGradient id="lidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1b4b" stop-opacity=".55"/><stop offset=".45" stop-color="#1e1b4b" stop-opacity="0"/></linearGradient>
+            <linearGradient id="lidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--indigo);stop-opacity:.55"/><stop offset=".45" style="stop-color:var(--indigo);stop-opacity:0"/></linearGradient>
             <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           </defs>
           <g class="eye-closed" filter="url(#glow)">
-            <path d="M40,150 Q300,214 560,150" fill="none" stroke="#e9e6ff" stroke-width="5" stroke-linecap="round"/>
-            <path d="${lashes(SHUT, 1, 15, 30)}" fill="none" stroke="#e9e6ff" stroke-width="3.2" stroke-linecap="round"/>
+            <path d="M40,150 Q300,214 560,150" fill="none" style="stroke:var(--eye-line)" stroke-width="5" stroke-linecap="round"/>
+            <path d="${lashes(SHUT, 1, 15, 30)}" fill="none" style="stroke:var(--eye-line)" stroke-width="3.2" stroke-linecap="round"/>
           </g>
           <g class="eye-open">
             <g clip-path="url(#eyeClip)">
@@ -1262,7 +1497,7 @@
               <g class="eye-iris">
                 <circle cx="300" cy="150" r="76" fill="url(#iri)"/>
                 <path d="${fibres}" stroke="#ffffff" stroke-opacity=".16" stroke-width="1.3"/>
-                <circle cx="300" cy="150" r="76" fill="none" stroke="#0c0a24" stroke-width="7"/>
+                <circle cx="300" cy="150" r="76" fill="none" style="stroke:var(--night-1)" stroke-width="7"/>
                 <g class="eye-pupil">
                   <circle cx="300" cy="150" r="27" fill="#030208"/>
                   ${logoW}
@@ -1273,13 +1508,72 @@
               <path d="${almond}" fill="url(#lidShade)"/>
             </g>
             <g filter="url(#glow)">
-              <path d="M40,150 Q300,-14 560,150" fill="none" stroke="#e9e6ff" stroke-width="6" stroke-linecap="round"/>
-              <path d="M40,150 Q300,300 560,150" fill="none" stroke="#e9e6ff" stroke-opacity=".55" stroke-width="2.5"/>
-              <path d="M70,118 Q300,-58 530,118" fill="none" stroke="#e9e6ff" stroke-opacity=".25" stroke-width="2" class="eye-crease"/>
-              <path d="${lashes(UP, -1, 17, 40)}" fill="none" stroke="#e9e6ff" stroke-width="3.4" stroke-linecap="round"/>
+              <path d="M40,150 Q300,-14 560,150" fill="none" style="stroke:var(--eye-line)" stroke-width="6" stroke-linecap="round"/>
+              <path d="M40,150 Q300,300 560,150" fill="none" style="stroke:var(--eye-line)" stroke-opacity=".55" stroke-width="2.5"/>
+              <path d="M70,118 Q300,-58 530,118" fill="none" style="stroke:var(--eye-line)" stroke-opacity=".25" stroke-width="2" class="eye-crease"/>
+              <path d="${lashes(UP, -1, 17, 40)}" fill="none" style="stroke:var(--eye-line)" stroke-width="3.4" stroke-linecap="round"/>
             </g>
           </g>
         </svg>`;
+    }
+
+    // Aerial "drone" corridor: rows of batteries on both sides, the real Litpax battery at the end
+    // Plain, unbranded batteries for the rows (only the hero at the end is a real Litpax pack)
+    function genericBattery(v) {
+      const P = [
+        ["#2b2f36", "#1b1e23", "#3b4048", "#454b55"],   // graphite
+        ["#4b5563", "#343b46", "#6b7280", "#8b93a1"],   // steel
+        ["#d6dae0", "#aeb4be", "#eceff3", "#c2c8d0"],   // white
+        ["#334155", "#1e293b", "#4a5a70", "#5d6c82"]    // blue-grey
+      ][v % 4];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260">
+        <path d="M30 62 L150 42 L186 57 L66 80 Z" fill="${P[2]}"/>
+        <path d="M30 62 L66 80 L66 252 L30 232 Z" fill="${P[1]}"/>
+        <path d="M66 80 L186 57 L186 230 L66 252 Z" fill="${P[0]}"/>
+        <path d="M82 122 L170 106 L170 146 L82 162 Z" fill="${P[3]}" opacity=".55"/>
+        <path d="M82 178 L170 162 L170 168 L82 184 Z" fill="${P[3]}" opacity=".35"/>
+        <path d="M88 64 Q100 50 124 47" fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+        <ellipse cx="140" cy="52" rx="7" ry="3.4" fill="#c0392b"/><rect x="133" y="44" width="14" height="8" fill="#c0392b"/><ellipse cx="140" cy="44" rx="7" ry="3.4" fill="#e74c3c"/>
+        <ellipse cx="164" cy="48" rx="7" ry="3.4" fill="#111"/><rect x="157" y="40" width="14" height="8" fill="#111"/><ellipse cx="164" cy="40" rx="7" ry="3.4" fill="#333"/>
+      </svg>`;
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
+
+    function droneScene() {
+      const src = esc(INTRO.battery || C.company.product || "");
+      if (!src) return "";
+      const gen = [0, 1, 2, 3].map(genericBattery);
+      let rows = "", n = 0;
+      const xs = [-250, 250, -470, 470, -690, 690];
+      for (let z = 300; z <= 5700; z += 360) {
+        xs.forEach((x, k) => {
+          const jitter = ((z / 360 + k) % 3) * 14 - 14;
+          rows += `<img class="dr-b${Math.abs(x) > 300 ? " far" : ""}" src="${gen[(n++ * 7 + k) % 4]}" alt="" style="--x:${x + jitter}px;--z:-${z + (k % 2) * 120}px;--r:${(k % 2 ? -1 : 1) * (6 + (z / 360) % 8)}deg">`;
+        });
+      }
+      return `
+        <div class="dr-scene">
+          <div class="dr-sky"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="dr-world">
+            <div class="dr-floor"></div>
+            <div class="dr-lane l"></div><div class="dr-lane r"></div>
+            <div class="dr-runway"></div>
+            ${rows}
+            <div class="dr-hero" style="--z:-6600px"><img src="${src}" alt=""><span class="dr-hero-glow"></span></div>
+          </div>
+          <div class="dr-fog"></div>
+          <div class="dr-speed"></div>
+          <div class="dr-hud">
+            <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+            <span class="rec"><b></b>REC</span>
+            <span class="alt">ALT <em data-k="alt">120</em> m</span>
+            <span class="spd">SPD <em data-k="spd">0</em> km/h</span>
+            <span class="cross"></span>
+            <span class="tag">LITPAX · AERIAL</span>
+          </div>
+          <div class="dr-flash"></div>
+          <div class="dr-ring"></div>
+        </div>`;
     }
 
     function build() {
@@ -1300,49 +1594,97 @@
             <div class="in-closing">${closing}</div>
           </div>
         </div>
+        ${droneScene()}
         <div class="in-pulse"></div>
         <div class="in-eye">${eyeSVG()}</div>
         <div class="in-skip">Press any key to skip</div>`;
     }
+
+    // "Click to begin" — browsers only allow sound after a click, and it also enters full screen
+    function begin() {
+      api.waiting = true;
+      box.hidden = false;
+      box.className = "begin";
+      box.innerHTML = `
+        <div class="bg-wrap">
+          ${C.company.logoWhite ? `<img class="bg-logo" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b class="bg-logo-t">${esc(C.company.shortName)}</b>`}
+          <button class="bg-play" aria-label="Begin"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
+          <span class="bg-t">Begin</span>
+          <span class="bg-h">Best experienced in full screen, with sound on</span>
+        </div>`;
+    }
+    function start() {
+      api.waiting = false;
+      SFX.init();
+      try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {}
+      play();
+    }
+
     const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+    const addC = (cls) => box.classList.add(cls);
+    const line = (n) => { const t = (VO.intro || [])[n]; if (t) Voice.say("intro-" + (n + 1), t, { rate: 0.82, pitch: 0.62 }); };
+
+    function hudRun(fromAlt, toAlt, fromSpd, toSpd, ms) {
+      const a = box.querySelector('[data-k="alt"]'), sp = box.querySelector('[data-k="spd"]');
+      if (!a) return;
+      const t0 = performance.now();
+      const tick = (t) => {
+        if (!api.running) return;
+        const p = Math.min(1, (t - t0) / ms);
+        a.textContent = Math.round(fromAlt + (toAlt - fromAlt) * p);
+        sp.textContent = Math.round(fromSpd + (toSpd - fromSpd) * p);
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
 
     function play() {
       if (api.running) return;
       api.running = true;
       revealed = false;
+      SFX.init();
       if (activeCtx) { activeCtx.stop(); activeCtx = null; }
+      Voice.stop();
       els.forEach((el) => el.classList.remove("active"));
       timers.forEach(clearTimeout); timers = [];
       build();
       box.hidden = false;
       box.className = "";
+      box.style.setProperty("--cover", Math.max(window.innerWidth / 1280, window.innerHeight / 720));
       void box.offsetWidth;
       const T = [
-        [100, "p-pulse"],      // heartbeat glow on black
-        [900, "e-closed"],     // closed eye fades in
-        [2100, "e-peek"],      // eye flutters half open
-        [2550, "e-blink"],     // blink
-        [2850, "e-open"],      // opens fully
-        [3500, "e-left"],      // looks left
-        [4050, "e-right"],     // looks right
-        [4600, "e-center"],    // looks at you
-        [4900, "e-dilate"],    // pupil dilates, Litpax reflection
-        [5800, "p-dive"],      // camera dives through the pupil into the scene
-        [7100, "p-charge"],    // battery charging
-        [8200, "p-brand"],     // logo light sweep
-        [8900, "p-lines"],     // taglines
-        [10500, "p-close"],    // closing line
-        [12900, "p-exit"]      // zoom out into the deck
+        [100,   () => { addC("p-pulse"); SFX.heartbeat(); }],
+        [500,   () => line(0)],                                   // "Every great product begins… with how you see it."
+        [1250,  () => SFX.heartbeat()],
+        [2400,  () => { addC("e-closed"); SFX.heartbeat(); }],
+        [3700,  () => addC("e-peek")],
+        [4150,  () => addC("e-blink")],
+        [4450,  () => { addC("e-open"); SFX.whoosh(0.8); }],
+        [4700,  () => line(1)],                                   // "At Litpax… we see every battery."
+        [5100,  () => addC("e-left")],
+        [5650,  () => addC("e-right")],
+        [6200,  () => addC("e-center")],
+        [6500,  () => { addC("e-dilate"); SFX.shimmer(); }],
+        [7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); }], // dive through the pupil
+        [8000,  () => { addC("d-aerial"); SFX.rotorStart(); hudRun(120, 96, 0, 24, 1600); }],
+        [9700,  () => { addC("d-descend"); SFX.rotorRise(1.2); hudRun(96, 3, 24, 42, 1100); }],
+        [10800, () => { addC("d-fly"); SFX.rotorRise(2); SFX.whoosh(2.2, true); hudRun(3, 2, 42, 86, 2100); }],
+        [12900, () => { addC("d-impact"); SFX.rotorStop(); SFX.boom(); }],   // the hit
+        [13300, () => line(2)],                                   // "Every step. Every customer."
+        [13900, () => { addC("p-charge"); SFX.charge(); SFX.padStart(0.045); }],
+        [15000, () => { addC("p-brand"); SFX.shimmer(); }],
+        [15700, () => { addC("p-lines"); line(3); }],             // "Every call answered. Every battery tracked."
+        [18400, () => { addC("p-close"); line(4); }],             // "Our quality. Our commitment. Our future."
+        [22200, () => { addC("p-exit"); reveal(); }],
+        [23200, finish]
       ];
-      T.forEach(([ms, cls]) => at(ms, () => box.classList.add(cls)));
-      at(12900, reveal);       // title slide animates in underneath the fade
-      done = () => finish();
-      at(13900, done);
+      T.forEach(([ms, fn]) => at(ms, fn));
     }
     function skip() {
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
-      box.classList.add("p-dive", "p-exit", "fast");
+      Voice.stop(); SFX.rotorStop(); SFX.padStart(0.045);
+      box.classList.add("p-dive", "d-impact", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
     }
@@ -1359,14 +1701,15 @@
       box.hidden = true; box.className = ""; box.innerHTML = "";
       api.running = false;
     }
-    box.addEventListener("click", skip);
+    box.addEventListener("click", () => { if (api.waiting) start(); else skip(); });
+    api.start = start;
     return api;
   })();
 
   const start = parseInt((location.hash || "").replace("#", ""), 10);
   if (INTRO.enabled && (isNaN(start) || start === 1) && !window.matchMedia("print").matches) {
     fit();
-    intro.play();
+    intro.begin();
   } else {
     go(isNaN(start) ? 0 : start - 1);
   }
