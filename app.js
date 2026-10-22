@@ -2258,69 +2258,91 @@
       if (activeCtx) { activeCtx.stop(); activeCtx = null; }
       Voice.stop();
       oTimers.forEach(clearTimeout); oTimers = [];
-      const ct = C.company.contact || {};
-      const closing = (INTRO.closing || "").split(".").filter((x) => x.trim()).map((x, i) => `<span style="--i:${i}">${esc(x.trim())}.</span>`).join("");
+      const ct = C.company.contact || {}, O = C.outro || {};
+      const tag = (INTRO.closing || "").split(".").filter((x) => x.trim()).map((x) => x.trim() + ".");
+      const words = (t, base) => t.split(" ").map((w, i) => `<span class="ow"><span style="--w:${base + i}">${esc(w)}</span></span>`).join(" ");
       let dots = "";
-      for (let i = 0; i < 90; i++) {
-        const a = (i * 137.5) % 360, r = 380 + (i % 7) * 60;
-        dots += `<i style="--tx:${(((i * 53) % 100) - 50) * 3.2}px;--ty:${(((i * 29) % 100) - 50) * 0.9}px;--sx:${(Math.cos(a * Math.PI / 180) * r).toFixed(0)}px;--sy:${(Math.sin(a * Math.PI / 180) * r * 0.7).toFixed(0)}px;--dl:${((i % 30) * 0.02).toFixed(2)}s"></i>`;
+      for (let i = 0; i < 70; i++) {
+        const a = (i * 137.5) % 360, r = 300 + (i % 9) * 55;
+        dots += `<i style="--sx:${(Math.cos(a * Math.PI / 180) * r).toFixed(0)}px;--sy:${(Math.sin(a * Math.PI / 180) * r * 0.62).toFixed(0)}px;--dl:${((i % 14) * 0.035).toFixed(2)}s"></i>`;
       }
+      const R = 150, CIRC = (2 * Math.PI * R).toFixed(1);
+      const chips = [[ct.phone, ICON.phone], [ct.website, ICON.doc], [ct.email, ICON.bell]].filter((x) => x[0])
+        .map((x) => `<span>${x[1]}${esc(x[0])}</span>`).join("");
       box.innerHTML = `
-        <div class="ot-bg"></div>
-        <div class="in-sparks">${sparks(26)}</div>
-        <div class="ot-batt">${batterySVG()}<div class="ot-charge"><b><span data-k="pct">0</span>%</b><div class="in-bar"><i data-k="obar"></i></div></div></div>
-        <div class="ot-burst"></div>
-        <div class="ot-logo"><div class="ot-dots">${dots}</div>${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b>${esc(C.company.shortName)}</b>`}</div>
-        <div class="ot-lines">${closing}</div>
-        <div class="ot-build">${esc((C.outro && C.outro.headline) || "Let's build together.")}</div>
-        <div class="ot-contact">${[ct.phone, ct.website, ct.email].filter(Boolean).map(esc).join("<i>·</i>")}</div>
-        <div class="out-eye">${eyeSVG()}</div>
-        <div class="ot-end"><span>${esc(C.company.name)}</span><em>Press any key to return</em></div>
+        <div class="oc-bg"></div>
+        <div class="oc-glow"></div>
+        <div class="in-sparks">${sparks(30)}</div>
+        <div class="oc-batt">
+          <svg class="oc-ring" viewBox="0 0 340 340"><circle cx="170" cy="170" r="${R}" class="trk"/><circle cx="170" cy="170" r="${R}" class="val" style="stroke-dasharray:${CIRC};stroke-dashoffset:${CIRC}"/></svg>
+          <div class="oc-cell">${batterySVG()}</div>
+          <div class="oc-pct"><b data-k="pct">0</b><em>%</em><span>Charging</span></div>
+        </div>
+        <div class="oc-wave"></div><div class="oc-wave w2"></div>
+        <div class="oc-dots">${dots}</div>
+        <div class="oc-line"></div>
+        <div class="oc-logo">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b>${esc(C.company.shortName)}</b>`}<i class="oc-shine"></i></div>
+        <div class="oc-tags">${tag.map((t, i) => `<div class="oc-tag" data-k="t${i}">${words(t, 0)}</div>`).join("")}</div>
+        <div class="oc-build"><div class="oc-h">${words(O.headline || "Let's build together.", 0)}</div><div class="oc-chips">${chips}</div></div>
+        <div class="oc-eye">${eyeSVG()}</div>
+        <div class="oc-final">
+          ${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="">` : ""}
+          <b>${esc(O.thanks || "Thank you.")}</b>
+          <span>${esc(C.company.name)}</span>
+          <em>Press any key to return</em>
+        </div>
         ${fxLayers()}`;
       box.hidden = false; box.className = "outro";
-      box.style.setProperty("--cover", Math.max(window.innerWidth / 1280, window.innerHeight / 720));
+      document.body.classList.add("outro-zoom");                 // the deck melts into the film
       void box.offsetWidth;
       const oc = (cls) => box.classList.add(cls);
+      const off = (cls) => box.classList.remove(cls);
       const oat = (ms, fn) => oTimers.push(setTimeout(fn, ms));
       const say = (n) => { const t = (VO.outro || [])[n]; if (t) Voice.say("outro-" + (n + 1), t, { rate: 0.88 }); };
-      const charge = () => {
-        const pct = box.querySelector('[data-k="pct"]'), bar = box.querySelector('[data-k="obar"]'), t0 = performance.now();
+      const charge = (ms) => {
+        const pct = box.querySelector('[data-k="pct"]'), ring = box.querySelector(".oc-ring .val"), t0 = performance.now();
         const tick = (t) => {
           if (!api.outroOn) return;
-          const p = Math.min(1, (t - t0) / 2200), e = 1 - Math.pow(1 - p, 2);
-          pct.textContent = Math.round(e * 100); bar.style.width = e * 100 + "%";
-          if (p < 1) requestAnimationFrame(tick);
+          const p = Math.min(1, (t - t0) / ms), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          pct.textContent = Math.round(e * 100);
+          ring.style.strokeDashoffset = (CIRC * (1 - e)).toFixed(1);
+          if (p < 1) requestAnimationFrame(tick); else oc("o-full");
         };
         requestAnimationFrame(tick);
       };
       [
-        [50,    () => { oc("o-on"); SFX.whoosh(1.4, true); SFX.musicLevel(0.05, 1); }],
-        [800,   () => { oc("o-batt"); SFX.charge(); charge(); }],
-        [1500,  () => SFX.riser(1.5)],
-        [3100,  () => { oc("o-burst"); SFX.drop(); }],
-        [3600,  () => { oc("o-logo"); SFX.whoosh(1.2); }],
-        [4800,  () => { oc("o-logo-on"); SFX.shimmer(); say(0); }],        // "Litpax Technology."
-        [5800,  () => { oc("o-lines"); say(1); }],                        // "Our quality. Our commitment. Our future."
-        [9000,  () => { oc("o-build"); say(2); }],                        // "Let's build together."
-        [12600, () => { oc("o-eye"); SFX.musicLevel(0.03, 2); }],
-        [14000, () => { oc("o-shut"); SFX.heartbeat(); }],
-        [15600, () => { oc("o-black"); SFX.musicLevel(0.0001, 4); }],
-        [16600, () => { oc("o-end"); api.outroEnd = true; }]
+        [30,    () => { oc("o-on"); SFX.whoosh(1.6, true); SFX.musicLevel(0.05, 1.5); }],
+        [700,   () => { oc("o-batt"); SFX.charge(); charge(2600); }],
+        [1900,  () => SFX.riser(1.4)],
+        [3400,  () => { oc("o-wave"); SFX.drop(); }],              // 100% → light wave
+        [3900,  () => { oc("o-dots"); SFX.whoosh(1.0); }],          // particles gather to one point
+        [4800,  () => { oc("o-line"); SFX.shimmer(); }],            // a line of light…
+        [5300,  () => { oc("o-logo"); say(0); }],                   // …opens into the logo
+        [6600,  () => { oc("o-up"); oc("o-t0"); say(1); }],
+        [7400,  () => oc("o-t1")],
+        [8200,  () => oc("o-t2")],
+        [10200, () => { oc("o-build"); say(2); }],
+        [13400, () => { oc("o-eye"); SFX.musicLevel(0.03, 2); }],
+        [15000, () => { oc("o-shut"); SFX.heartbeat(); }],
+        [17000, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
+        [18200, () => { api.outroEnd = true; }]
       ].forEach(([ms, fn]) => oat(ms, fn));
     }
     function outroKey() {
       if (!api.outroOn) return;
-      if (!api.outroEnd) {                         // first key: jump to the final black frame
+      if (!api.outroEnd) {                         // first key: jump to the final frame
         oTimers.forEach(clearTimeout); oTimers = [];
         Voice.stop();
-        box.classList.add("o-on", "o-black", "o-end", "fast"); api.outroEnd = true;
-        SFX.musicLevel(0.0001, 1);
+        box.classList.add("o-on", "o-final", "fast"); api.outroEnd = true;
+        SFX.musicLevel(0.02, 1);
         return;
       }
-      box.hidden = true; box.className = ""; box.innerHTML = "";   // second key: back to the title slide
-      api.outroOn = false; api.outroEnd = false;
-      SFX.musicLevel(0.055, 2);
+      // second key: the film fades back into the title slide
+      box.classList.add("o-leave");
+      document.body.classList.remove("outro-zoom");
       cur = -1; activeCtx = null; go(0);
+      SFX.musicLevel(0.055, 2);
+      setTimeout(() => { box.hidden = true; box.className = ""; box.innerHTML = ""; api.outroOn = false; api.outroEnd = false; }, 900);
     }
     api.outro = outro; api.outroKey = outroKey;
     box.addEventListener("click", () => { if (api.waiting) start(); else if (api.outroOn) outroKey(); else skip(); });
