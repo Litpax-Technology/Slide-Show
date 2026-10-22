@@ -1092,3 +1092,60 @@ h2 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.03em
 .step-right[data-shot="1"] .view-shot { opacity: 1; pointer-events: auto; }
 .step-right[data-shot="1"] .frame-mini { opacity: 1; transform: none; }
 @media print { .frame-main { inset: 14px 0 26px 0; } }
+
+/* =========================================================
+   INTRO v2 — illustrated human eye
+   ========================================================= */
+#intro::before { display: none; }                 /* old oval mask retired */
+.in-scene { clip-path: circle(0% at 50% 48%); }
+#intro.p-dive .in-scene {
+  clip-path: circle(150% at 50% 48%); filter: none; transform: scale(1);
+  transition: clip-path 1.5s cubic-bezier(.7,0,.3,1) .35s, filter 1.8s ease .35s, transform 2.4s cubic-bezier(.2,.7,.2,1) .35s;
+}
+#intro.e-closed .in-pulse { opacity: 0; }
+
+.in-eye {
+  position: absolute; left: 50%; top: 48%; z-index: 6; width: min(64vw, 110vh);
+  transform: translate(-50%, -50%) scale(.92); opacity: 0;
+  transition: transform 1.2s cubic-bezier(.2,.7,.2,1), opacity .9s ease;
+}
+.in-eye svg { width: 100%; height: auto; display: block; overflow: visible; }
+.in-eye::before {                                   /* soft aura behind the eye */
+  content: ""; position: absolute; left: 10%; right: 10%; top: 25%; bottom: 20%; z-index: -1;
+  background: radial-gradient(ellipse at center, rgba(99,91,255,.35), transparent 70%); filter: blur(30px);
+  opacity: 0; transition: opacity 1.2s ease;
+}
+#intro.e-closed .in-eye { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+#intro.e-open .in-eye::before { opacity: 1; }
+
+.eye-closed { opacity: 0; transition: opacity .5s ease; }
+#intro.e-closed .eye-closed { opacity: 1; }
+#intro.e-peek .eye-closed, #intro.e-open .eye-closed { opacity: 0; transition-duration: .12s; }
+#intro.e-blink:not(.e-open) .eye-closed { opacity: 1; transition-duration: .1s; }
+
+.eye-open { opacity: 0; transform-origin: 300px 150px; transform: scaleY(.04); transition: transform .45s cubic-bezier(.6,0,.3,1), opacity .12s; }
+#intro.e-peek .eye-open { opacity: 1; transform: scaleY(.36); transition-duration: .4s; }
+#intro.e-blink .eye-open { transform: scaleY(.04); transition-duration: .14s; }
+#intro.e-blink:not(.e-open) .eye-open { opacity: 0; transition: opacity .1s .1s, transform .14s; }
+#intro.e-open .eye-open { opacity: 1; transform: scaleY(1); transition: transform .75s cubic-bezier(.2,.8,.2,1), opacity .05s; }
+
+.eye-iris { transition: transform .45s cubic-bezier(.4,0,.2,1); }
+#intro.e-left .eye-iris { transform: translate(-58px, 8px); }
+#intro.e-right .eye-iris { transform: translate(52px, -6px); }
+#intro.e-center .eye-iris { transform: translate(0, 0); }
+
+.eye-pupil { transform-origin: 300px 150px; transition: transform 1s cubic-bezier(.2,.7,.2,1); }
+#intro.e-dilate .eye-pupil { transform: scale(1.75); }
+.eye-logo { opacity: 0; transition: opacity .8s ease .4s; }
+#intro.e-dilate .eye-logo { opacity: .75; }
+
+/* the dive: zoom straight into the pupil */
+#intro.p-dive .in-eye {
+  transform: translate(-50%, -50%) scale(22); opacity: 0;
+  transition: transform 1.5s cubic-bezier(.75,0,.85,.2), opacity .6s ease 1s;
+}
+#intro.p-dive .in-eye::before { opacity: 0; }
+
+/* fast skip */
+#intro.fast .in-eye { transition-duration: .3s !important; transition-delay: 0s !important; }
+#intro.fast.p-dive .in-scene { transition-delay: 0s !important; transition-duration: .35s !important; }
