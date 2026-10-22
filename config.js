@@ -57,6 +57,11 @@ window.PITCH_CONFIG = {
     rate: 0.94,      // 0.9 – 1.0 sounds most natural
     pitch: 1,        // keep at 1 — lowering it makes browser voices sound muddy
     folder: "assets/voice/",
+    outro: [
+      "Litpax Technology.",
+      "Our quality. Our commitment. Our future.",
+      "Let's build together."
+    ],
     intro: [
       "Every great product begins... with how you see it.",
       "At Litpax... we see every battery.",
@@ -65,6 +70,11 @@ window.PITCH_CONFIG = {
       "Our quality. Our commitment. Our future."
     ],
     lines: {
+      "phase-Sell": "Chapter one. Sell.",
+      "phase-Source": "Chapter two. Source.",
+      "phase-Make": "Chapter three. Make.",
+      "phase-Deliver": "Chapter four. Deliver.",
+      "phase-Support": "Chapter five. Support.",
       "challenges": "Buying batteries shouldn't feel like a gamble. Inconsistent quality. No idea where your order is. Warranty arguments. Service calls that get lost. We built Litpax to fix exactly this.",
       "gains": "Every one of these problems is answered by a system — so you save time, see fewer defects, and get fast, fair replacements.",
       "why": "Why choose Litpax? Built in-house. Every battery traceable. Quality at every station. Your order, live. Your own sales and service CRM. And fair, fast warranty.",
@@ -251,6 +261,22 @@ window.PITCH_CONFIG = {
   ],
 
   phases: ["Sell", "Source", "Make", "Deliver", "Support"],
+  /* one line per chapter divider */
+  phaseLines: {
+    Sell: "From the first enquiry to a confirmed order.",
+    Source: "The right material, from the right vendor, at the right time.",
+    Make: "Built, checked and reviewed — every battery, every day.",
+    Deliver: "Scanned out against your order, tracked to your door.",
+    Support: "With you long after delivery."
+  },
+
+  /* Background music: put a royalty-free track at this path to use it;
+     if the file is missing, a soft cinematic track is generated in code. */
+  music: "assets/music.mp3",
+  musicVolume: 0.35,
+
+  /* Closing film (plays after the last slide, or press E) */
+  outro: { headline: "Let's build together." },
 
   /* Step slides: if a step's screenshot file exists it is shown directly;
      if not, the animated demo plays in its place. No tabs, no clicks.
