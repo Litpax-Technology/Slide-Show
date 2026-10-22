@@ -17,7 +17,7 @@ window.PITCH_CONFIG = {
     shortName: "LITPAX",
     logo: "assets/logo.png",
     logoWhite: "assets/logo-white.png",   // used on dark screens (intro, ambition)
-    product: "assets/battery.png",        // real product photo on the title slide
+    productArt: { volt: "74V", cap: "36Ah" },   // labels on the animated battery (no photo used)
     tagline: "Lithium Battery Manufacturing",
     location: "Haryana, India",
     about:
@@ -39,7 +39,6 @@ window.PITCH_CONFIG = {
   /* ---------- CINEMATIC INTRO (plays when the deck opens; any key skips, "I" replays) ---------- */
   intro: {
     enabled: true,
-    battery: "assets/battery.png",
     chargeLabel: "Litpax 74V · Charging",
     lines: ["Every call answered.", "Every battery tracked."],
     closing: "Our quality. Our commitment. Our future."
@@ -55,8 +54,8 @@ window.PITCH_CONFIG = {
   voice: {
     enabled: true,
     autoAdvance: false,
-    rate: 0.9,
-    pitch: 0.72,
+    rate: 0.94,      // 0.9 – 1.0 sounds most natural
+    pitch: 1,        // keep at 1 — lowering it makes browser voices sound muddy
     folder: "assets/voice/",
     intro: [
       "Every great product begins... with how you see it.",
@@ -68,7 +67,8 @@ window.PITCH_CONFIG = {
     lines: {
       "challenges": "Buying batteries shouldn't feel like a gamble. Inconsistent quality. No idea where your order is. Warranty arguments. Service calls that get lost. We built Litpax to fix exactly this.",
       "gains": "Every one of these problems is answered by a system — so you save time, see fewer defects, and get fast, fair replacements.",
-      "why": "Why choose Litpax? Built in-house. Every battery traceable. Quality at every station. Your order, live. Service that follows through. And fair, fast warranty.",
+      "why": "Why choose Litpax? Built in-house. Every battery traceable. Quality at every station. Your order, live. Your own sales and service CRM. And fair, fast warranty.",
+      "crm": "And you are never talking to a stranger. Your Sales CRM owns your orders, from quotation to delivery. Your Service CRM owns every service call, until your vehicle is back on the road.",
       "track": "This is a real order inside our ERP. Every item is followed — from the moment you order, through production and billing, until it leaves our gate.",
       "versus": "Here is the difference, side by side. Where a typical supplier asks you to call and wait, we show you everything, live.",
       "products": "Our range covers two-wheeler packs, e-cycle and prismatic packs — with matched smart chargers.",
@@ -127,8 +127,26 @@ window.PITCH_CONFIG = {
         ["No record of the battery", "Barcode history for every pack", "Instant root cause"],
         ["Quality checked only at the end", "Checks at every station, every shift", "Fewer defects"],
         ["Warranty disputes", "Rule-based exchange with audit trail", "Fast, fair replacement"],
-        ["Service calls forgotten", "Ticket tracked until it is solved", "Less downtime"]
+        ["Service calls forgotten", "Ticket tracked until it is solved", "Less downtime"],
+        ["Talking to whoever picks up", "Your own Sales CRM & Service CRM", "One person who knows you"]
       ]
+    },
+    crm: {
+      kicker: "Your dedicated team",
+      title: "Two people who own your account.",
+      you: "You",
+      youSub: "One call — always the right person",
+      plant: "Plant · Production · Dispatch",
+      sales: {
+        role: "Sales CRM", title: "Your order partner",
+        line: "Your single point of contact from quotation to delivery.",
+        does: ["Quotes, orders and pricing", "Production and dispatch updates", "Delivery and documents follow-up", "Regular check-ins on your needs"]
+      },
+      service: {
+        role: "Service CRM", title: "Your support partner",
+        line: "Owns every service call until your vehicle is back on the road.",
+        does: ["Logs every call as a ticket", "Arranges pickup and repair", "Tracks warranty replacements", "Calls back until it is solved"]
+      }
     },
     whyKicker: "Why choose us",
     whyTitle: "Why choose Litpax.",
@@ -140,7 +158,7 @@ window.PITCH_CONFIG = {
       bar: "Litpax ERP · Order tracking",
       note: "Real screen · customer details blurred",
       stages: [
-        { t: "Order received", d: "Your order, items and dispatch plan are recorded.", pos: 0 },
+        { t: "Order received", d: "Your order and dispatch plan are recorded, with an assigned CRM.", pos: 0 },
         { t: "Item-wise plan", d: "Each battery gets its own Item ID — produced, billed and dispatched counts per item.", pos: 0.33 },
         { t: "Production", d: "Actual start and completion date for every item, with delays flagged.", pos: 0.6 },
         { t: "Billing", d: "Invoice linked to each item ID.", pos: 0.73 },
@@ -152,6 +170,7 @@ window.PITCH_CONFIG = {
       title: "Litpax vs a typical supplier.",
       them: "Typical supplier",
       rows: [
+        ["Point of contact", "Whoever picks up the phone", "Dedicated Sales CRM & Service CRM"],
         ["Order status", "Call and wait", "Live dashboard, any time"],
         ["Battery history", "Not recorded", "Every station & employee, scanned"],
         ["Quality checks", "At the end, if at all", "At every station + daily checklist"],
@@ -177,7 +196,7 @@ window.PITCH_CONFIG = {
       steps: [
         { t: "Talk to us", d: "Call our toll-free number or send an enquiry." },
         { t: "We recommend", d: "We understand your vehicle and suggest the right pack." },
-        { t: "First order", d: "You get a private live dashboard for your orders." },
+        { t: "First order", d: "Your Sales CRM is assigned and your live dashboard goes live." },
         { t: "Ongoing support", d: "Tracked delivery, service tickets and fair warranty." }
       ]
     }
@@ -468,7 +487,7 @@ window.PITCH_CONFIG = {
     { t: "Every battery traceable", d: "Each pack carries a barcode history: stations, employees, dispatch and service." },
     { t: "Quality at every station", d: "Scans, daily checklists and plan-vs-achieved reviews — chasing a 0% defect goal." },
     { t: "Your order, live", d: "A private dashboard shows your orders, service calls and repairs — no follow-up calls." },
-    { t: "Service that follows through", d: "Every call becomes a ticket that is tracked step by step until it is solved." },
+    { t: "Your own Sales & Service CRM", d: "Two named people own your account — one for orders, one for service. No call goes unanswered." },
     { t: "Fair, fast warranty", d: "Replacements follow a clear approved flow with a full audit trail — no arguments." }
   ]
 };
