@@ -24,12 +24,14 @@
   }
 
   // Screenshot (png/jpg) or screen recording (mp4/webm); placeholder if missing
-  function media(src, title) {
+  function media(src, title, isMain) {
     const isVid = /\.(mp4|webm)$/i.test(src || "");
-    const fail = `onerror="this.parentNode.classList.add('empty');this.remove()"`;
+    // data-shot on the step's right side: "1" = screenshot loaded, "0" = missing
+    const mark = (v) => isMain ? `var r=this.closest('.step-right');if(r)r.dataset.shot='${v}';` : "";
+    const fail = `onerror="${mark(0)}this.parentNode.classList.add('empty');this.remove()"`;
     const el = !src ? ""
-      : isVid ? `<video src="${esc(src)}" muted loop playsinline preload="metadata" ${fail}></video>`
-      : `<img src="${esc(src)}" alt="${esc(title)}" ${fail}>`;
+      : isVid ? `<video src="${esc(src)}" muted loop playsinline preload="metadata" onloadeddata="${mark(1)}" ${fail}></video>`
+      : `<img src="${esc(src)}" alt="${esc(title)}" onload="${mark(1)}" ${fail}>`;
     return `
         <div class="frame-screen${src ? "" : " empty"}">
           ${el}
@@ -209,11 +211,7 @@
             <ul class="points">${s.points.map((p) => `<li class="rv">${check}<span>${esc(p)}</span></li>`).join("")}</ul>
             ${s.liveUrl ? `<a class="btn rv" href="${esc(s.liveUrl)}" target="_blank" rel="noopener">Open live app ${arrow}</a>` : ""}
           </div>
-          <div class="step-right rv">
-            <div class="vtabs">
-              <button class="on" data-view="demo">${ICON.play} How it works</button>
-              <button data-view="shot">${ICON.img} Screenshot</button>
-            </div>
+          <div class="step-right rv"${s.shot ? "" : ' data-shot="0"'}>
             <div class="frame frame-main">
               <div class="frame-bar"><i></i><i></i><i></i><span>${esc(s.app)}</span></div>
               <div class="views">
@@ -221,7 +219,7 @@
                   <div class="scene-host" data-scene="${esc(s.scene || s.id)}"></div>
                   <span class="demo-tag">Illustrative demo</span>
                 </div>
-                <div class="view view-shot">${media(s.shot, s.app)}</div>
+                <div class="view view-shot">${media(s.shot, s.app, true)}</div>
               </div>
             </div>
             ${s.login ? frame(s.login, "Login", "frame-mini") : ""}
@@ -1073,28 +1071,19 @@
     qa(right, ".vtabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
     right.classList.toggle("show-shot", v === "shot");
   }
-  function hasShot(right) {
-    const fs = right.querySelector(".view-shot .frame-screen");
-    return !!fs && !fs.classList.contains("empty");
-  }
-
+  // Screenshot added → show it directly. Not added → play the animated demo.
   async function runScene(host, c) {
     const sc = SCENES[host.dataset.scene];
     const right = host.closest(".step-right");
-    right.dataset.manual = "";
+    for (let t = 0; !right.dataset.shot && t < 3000; t += 100) await c.wait(100);
+    if (right.dataset.shot === "1") { setView(right, "shot"); return; }
     setView(right, "demo");
     if (!sc) return;
     while (c.alive) {
       host.innerHTML = sc.html();
       await c.wait(60);
       await sc.run(host, c);
-      if (DEMO.autoSwitch && !right.dataset.manual && hasShot(right)) {
-        setView(right, "shot");
-        await c.wait(DEMO.screenshotSeconds * 1000);
-        if (!right.dataset.manual) setView(right, "demo");
-      } else {
-        await c.wait(600);
-      }
+      await c.wait(600);
     }
   }
 
