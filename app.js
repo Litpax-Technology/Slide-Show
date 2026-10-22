@@ -73,6 +73,11 @@
     star: svg("M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.3L12 17.5 6.4 20.4l1.1-6.3L3 9.7l6.2-.9z", "st-ic")
   };
   const DEMO = Object.assign({ autoSwitch: true, screenshotSeconds: 6 }, C.demo || {});
+  const TAG = C.taglines || {};
+  const AMB = C.ambition || null;
+  const PROM = C.promise || null;
+  const MILES = (C.milestones || []).filter((m) => m && m.year && m.title);
+  const INTRO = C.intro || { enabled: false };
 
   function chrome(inner, opts) {
     opts = opts || {};
@@ -97,6 +102,7 @@
         ${logo("logo-lg rv")}
         <div class="eyebrow rv">${esc(C.company.tagline)} · ${esc(C.company.location)}</div>
         <h1 class="rv">How our<br><em>system</em> runs.</h1>
+        <p class="title-tag rv">${esc(TAG.title || "")}</p>
         <p class="lead rv">From your first enquiry to after-sales service — one connected digital chain, built in-house.</p>
         <div class="title-phases rv">${C.phases.map((p, i) => `<span>${esc(p)}</span>${i < C.phases.length - 1 ? arrow : ""}`).join("")}</div>
       </div>
@@ -104,8 +110,63 @@
         ${frame(C.steps.find((s) => s.id === "order").shot, "Litpax ERP", "tf tf1 rv")}
         ${frame(C.steps.find((s) => s.id === "production").shot, "Production Tracker", "tf tf2 rv")}
         ${frame(C.steps.find((s) => s.id === "clientdash").shot, "Partner Dashboard", "tf tf3 rv")}
+        ${C.company.product ? `<div class="title-batt rv"><img src="${esc(C.company.product)}" alt="Litpax battery" onerror="this.parentNode.remove()"><span class="batt-glow"></span></div>` : ""}
       </div>`
   });
+
+  // 1b. Ambition — Milestone 2027 (cinematic dark statement slide)
+  if (AMB) {
+    slides.push({
+      title: AMB.kicker || "Our ambition",
+      cls: "s-amb",
+      hero: "ambition",
+      html: `
+        <div class="amb-orbs"><i></i><i></i><i></i></div>
+        <div class="slide-top">
+          <div class="logo logo-sm logo-white">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}" onerror="this.remove()">` : ""}<span>${esc(C.company.shortName)}</span></div>
+          <span class="slide-kicker">Our ambition</span>
+        </div>
+        <div class="amb-wrap">
+          <div class="amb-left">
+            <div class="amb-kicker rv"><span class="pulse"></span>${esc(AMB.kicker)}<i></i>${esc(AMB.team)}</div>
+            <div class="amb-big rv"><b data-k="pct">0</b><em>%</em><span>${esc(AMB.headline)}</span></div>
+            <div class="amb-head2 rv">${esc(AMB.headline2)}</div>
+            <p class="amb-sub rv">${AMB.sub.split(" ").map((w) => `<span class="w">${esc(w)}</span>`).join(" ")}</p>
+            <div class="amb-quote rv"><span class="q">“</span><span data-k="quote"></span><i class="caret"></i></div>
+          </div>
+          <div class="amb-right rv">
+            <div class="orbit">
+              <div class="orbit-ring r1"></div><div class="orbit-ring r2"></div>
+              <div class="orbit-core">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="" onerror="this.remove()">` : ""}<b>${esc(AMB.kicker)}</b></div>
+              <div class="orbit-track">${(AMB.values || []).map((v, i, a) => `<span class="orbit-chip" style="--a:${(360 / a.length) * i}deg"><i>${esc(v)}</i></span>`).join("")}</div>
+            </div>
+          </div>
+        </div>
+        <div class="amb-trio">${(AMB.closing || []).map((t) => `<span>${esc(t)}</span>`).join("")}</div>`
+    });
+  }
+
+  // 1c. Milestones (only when filled in config.js)
+  if (MILES.length) {
+    slides.push({
+      title: "Our journey",
+      cls: "s-miles",
+      hero: "miles",
+      html: chrome(`
+        <div class="center-head compact">
+          <div class="eyebrow rv">Our journey</div>
+          <h2 class="rv">Milestones that built Litpax.</h2>
+        </div>
+        <div class="miles">
+          <div class="miles-line"><i></i></div>
+          ${MILES.map((m, i) => `
+            <div class="mile ${i % 2 ? "down" : "up"}${m.goal ? " goal" : ""}">
+              <div class="mile-card"><b>${esc(m.year)}</b><strong>${esc(m.title)}</strong>${m.desc ? `<span>${esc(m.desc)}</span>` : ""}</div>
+              <div class="mile-dot"></div>
+            </div>`).join("")}
+        </div>`, { kicker: "Journey" })
+    });
+  }
 
   // 2. At a glance
   slides.push({
@@ -262,6 +323,35 @@
       </div>`, { kicker: "App family" })
   });
 
+  // 8b. The Litpax Promise (service)
+  if (PROM) {
+    slides.push({
+      title: PROM.kicker || "Our promise",
+      cls: "s-promise",
+      hero: "promise",
+      html: chrome(`
+        <div class="prom-wrap">
+          <div class="prom-left">
+            <div class="eyebrow rv">${esc(PROM.kicker)}</div>
+            <div class="prom-line rv">${esc(PROM.lead)} <span class="strike">${esc(PROM.strike)}</span></div>
+            <div class="prom-line big rv">${esc(PROM.sell)} <span class="rot" data-k="rot">${(PROM.words || []).map((w, i) => `<em${i === 0 ? ' class="on"' : ""}>${esc(w)}</em>`).join("")}</span></div>
+            <p class="prom-sub rv"><b>${esc(PROM.line)}</b><br>${esc(PROM.sub)}</p>
+          </div>
+          <div class="prom-right rv">
+            <div class="ptrack">
+              <div class="ptrack-line"><i data-k="pfill"></i></div>
+              ${(PROM.flow || []).map((f, i) => `<div class="pstop" data-k="ps${i}"><div class="pstop-d">${[ICON.phone, ICON.user, ICON.box, ICON.truck][i] || ICON.check}</div><b>${esc(f)}</b></div>`).join("")}
+              <div class="pticket" data-k="tk"><span>LTX-R-0042</span><em data-k="tks">${esc((PROM.flow || [""])[0])}</em></div>
+            </div>
+            <div class="prom-stats">
+              <div><b>1</b><span>ticket per customer issue</span></div>
+              <div><b>Every</b><span>step visible to the customer</span></div>
+            </div>
+          </div>
+        </div>`, { kicker: "Our promise" })
+    });
+  }
+
   // 9. Why Litpax
   slides.push({
     title: "Why partner with Litpax",
@@ -284,10 +374,12 @@
   slides.push({
     title: "Thank you",
     cls: "s-end",
+    hero: "end",
     html: `
       <div class="end-wrap">
         ${logo("logo-lg rv")}
         <h1 class="rv">Let's build<br><em>together.</em></h1>
+        ${TAG.end ? `<div class="end-tag rv">${TAG.end.split(".").filter((x) => x.trim()).map((x) => `<span>${esc(x.trim())}.</span>`).join("")}</div>` : ""}
         <p class="lead rv">${esc(C.company.name)}</p>
         <div class="contact">${ctRows.map((r) => `<div class="rv"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join("")}</div>
       </div>`
@@ -893,6 +985,67 @@
         await c.wait(2600);
       }
     },
+    ambition: async (el, c) => {
+      const k = K(el), words = qa(el, ".amb-sub .w"), trio = qa(el, ".amb-trio span");
+      words.forEach((w) => w.classList.remove("in")); trio.forEach((t) => t.classList.remove("in"));
+      k("quote").textContent = ""; k("pct").textContent = "100";
+      await c.wait(900);
+      await c.count(k("pct"), 100, 0, 1800, (v) => v);
+      k("pct").parentNode.classList.add("hit");
+      for (const w of words) { await c.wait(110); w.classList.add("in"); }
+      await c.wait(400);
+      await c.type(k("quote"), AMB.quote || "", 45);
+      for (const t of trio) { await c.wait(450); t.classList.add("in"); }
+    },
+    miles: async (el, c) => {
+      const ms = qa(el, ".mile"), fill = el.querySelector(".miles-line i");
+      ms.forEach((m) => m.classList.remove("lit")); fill.style.width = "0";
+      await c.wait(700);
+      for (let i = 0; i < ms.length; i++) {
+        fill.style.width = ((i + 0.5) / ms.length) * 100 + "%";
+        await c.wait(400); ms[i].classList.add("lit"); await c.wait(350);
+      }
+      fill.style.width = "100%";
+    },
+    promise: async (el, c) => {
+      const k = K(el), words = qa(el, ".rot em"), stops = qa(el, ".pstop"), n = stops.length;
+      el.querySelector(".strike").classList.remove("cut");
+      await c.wait(1100);
+      el.querySelector(".strike").classList.add("cut");
+      let wi = 0;
+      (async () => {
+        while (c.alive) {
+          await c.wait(1700);
+          words[wi].classList.remove("on"); words[wi].classList.add("out");
+          const prev = words[wi];
+          wi = (wi + 1) % words.length;
+          words[wi].classList.remove("out"); words[wi].classList.add("on");
+          await c.wait(500); prev.classList.remove("out");
+        }
+      })();
+      while (c.alive) {
+        stops.forEach((s) => s.classList.remove("on", "done"));
+        k("tk").style.left = 100 / (2 * n) + "%"; k("pfill").style.width = "0";
+        await c.wait(600);
+        for (let i = 0; i < n; i++) {
+          k("tk").style.left = (100 / n) * i + 100 / (2 * n) + "%";
+          k("pfill").style.width = (i / (n - 1)) * 100 + "%";
+          k("tks").textContent = stops[i].querySelector("b").textContent;
+          if (i > 0) { stops[i - 1].classList.remove("on"); stops[i - 1].classList.add("done"); }
+          stops[i].classList.add("on");
+          await c.wait(1200);
+        }
+        stops[n - 1].classList.remove("on"); stops[n - 1].classList.add("done");
+        k("tks").textContent = "Closed ✓";
+        await c.wait(2200);
+      }
+    },
+    end: async (el, c) => {
+      const t = qa(el, ".end-tag span");
+      t.forEach((x) => x.classList.remove("on"));
+      await c.wait(1100);
+      for (const x of t) { x.classList.add("on"); await c.wait(500); }
+    },
     fms: async (el, c) => {
       const table = el.querySelector(".fms-table"), tpl = table.innerHTML, flows = qa(el, ".fms-flow");
       await c.wait(800);
@@ -1030,6 +1183,8 @@
   document.addEventListener("keydown", (e) => {
     if (e.target.closest && e.target.closest("input,textarea")) return;
     const k = e.key;
+    if (intro.running) { e.preventDefault(); return intro.skip(); }
+    if (k === "i" || k === "I") return intro.play();
     if (!ov.hidden && k === "Escape") return closeOv();
     if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); go(cur + 1); }
     else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); go(cur - 1); }
@@ -1043,7 +1198,7 @@
   let tx = null, ty = null;
   document.addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
   document.addEventListener("touchend", (e) => {
-    if (tx == null) return;
+    if (tx == null || intro.running) return;
     const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(cur + (dx < 0 ? 1 : -1));
     tx = ty = null;
@@ -1051,6 +1206,98 @@
 
   window.addEventListener("resize", fit);
   fit();
+  /* =========================================================
+     CINEMATIC INTRO
+     Black screen → eyes open (blink) → battery comes into focus →
+     logo light-sweep → taglines → zoom into the title slide.
+     Any key / click skips. Press "I" to replay.
+     ========================================================= */
+  const intro = (function () {
+    const box = document.getElementById("intro");
+    const api = { running: false, play, skip };
+    if (!box || !INTRO.enabled) return api;
+    let timers = [], done = null;
+
+    function build() {
+      const lines = (INTRO.lines || []).map((l, i) => `<span class="il" style="--i:${i}">${esc(l)}</span>`).join("");
+      const closing = (INTRO.closing || "").split(".").filter((x) => x.trim())
+        .map((x, i) => `<span style="--i:${i}">${esc(x.trim())}.</span>`).join("");
+      box.innerHTML = `
+        <div class="in-scene">
+          <div class="in-bg"></div>
+          <div class="in-rays"></div>
+          <div class="in-batt">
+            ${INTRO.battery ? `<img src="${esc(INTRO.battery)}" alt="" onerror="this.remove()">` : ""}
+            <div class="in-charge"><span>${esc(INTRO.chargeLabel || "Charging")}</span><div class="in-bar"><i></i></div></div>
+          </div>
+          <div class="in-brand">
+            <div class="in-logo">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}" onerror="this.parentNode.classList.add('txt')">` : ""}<b>${esc(C.company.shortName)}</b></div>
+            <div class="in-lines">${lines}</div>
+            <div class="in-closing">${closing}</div>
+          </div>
+        </div>
+        <div class="in-lid top"></div><div class="in-lid bot"></div>
+        <div class="in-pulse"></div>
+        <div class="in-skip">Press any key to skip</div>`;
+    }
+    const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+    function play() {
+      if (api.running) return;
+      api.running = true;
+      revealed = false;
+      if (activeCtx) { activeCtx.stop(); activeCtx = null; }
+      els.forEach((el) => el.classList.remove("active"));
+      timers.forEach(clearTimeout); timers = [];
+      build();
+      box.hidden = false;
+      box.className = "";
+      void box.offsetWidth;
+      const T = [
+        [100, "p-pulse"],    // heartbeat glow on black
+        [1500, "p-crack"],   // eyes half open, blurred
+        [2300, "p-blink"],   // blink
+        [2650, "p-open"],    // open fully, focus pulls in
+        [4100, "p-charge"],  // battery charging
+        [5200, "p-brand"],   // logo light sweep
+        [5900, "p-lines"],   // taglines
+        [7500, "p-close"],   // closing line
+        [9900, "p-exit"]     // zoom out into the deck
+      ];
+      T.forEach(([ms, cls]) => at(ms, () => box.classList.add(cls)));
+      at(9900, reveal);      // title slide animates in underneath the fade
+      done = () => finish();
+      at(10900, done);
+    }
+    function skip() {
+      if (!api.running) return;
+      timers.forEach(clearTimeout); timers = [];
+      box.classList.add("p-open", "p-exit", "fast");
+      reveal();
+      timers.push(setTimeout(finish, 450));
+    }
+    let revealed = false;
+    function reveal() {
+      if (revealed) return;
+      revealed = true;
+      cur = -1; activeCtx = null;
+      go(0);
+    }
+    function finish() {
+      timers.forEach(clearTimeout); timers = [];
+      reveal();
+      box.hidden = true; box.className = ""; box.innerHTML = "";
+      api.running = false;
+    }
+    box.addEventListener("click", skip);
+    return api;
+  })();
+
   const start = parseInt((location.hash || "").replace("#", ""), 10);
-  go(isNaN(start) ? 0 : start - 1);
+  if (INTRO.enabled && (isNaN(start) || start === 1) && !window.matchMedia("print").matches) {
+    fit();
+    intro.play();
+  } else {
+    go(isNaN(start) ? 0 : start - 1);
+  }
 })();
