@@ -252,8 +252,12 @@ h2 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.03em
   background: var(--accent); border-radius: 7px; box-sizing: border-box;
 }
 .step-right { position: relative; flex: 1; height: 100%; }
-.frame-main { position: absolute; inset: 10px 0 30px 0; }
-.frame-mini { position: absolute; width: 250px; height: 175px; left: -40px; bottom: 0; z-index: 2; }
+.frame-main { position: absolute; inset: 48px 0 26px 0; }
+.frame-mini {
+  position: absolute; width: 250px; height: 175px; left: -40px; bottom: 0; z-index: 2;
+  opacity: 0; transform: translateY(14px); transition: opacity .45s var(--ease), transform .45s var(--ease); pointer-events: none;
+}
+.step-right.show-shot .frame-mini { opacity: 1; transform: none; }
 
 .mini {
   position: absolute; left: 64px; right: 140px; bottom: 20px;
