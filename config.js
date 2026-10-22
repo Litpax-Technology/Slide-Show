@@ -276,7 +276,7 @@ window.PITCH_CONFIG = {
   musicVolume: 0.35,
 
   /* Closing film (plays after the last slide, or press E) */
-  outro: { headline: "Let's build together." },
+  outro: { headline: "Let's build together.", thanks: "Thank you." },
 
   /* Step slides: if a step's screenshot file exists it is shown directly;
      if not, the animated demo plays in its place. No tabs, no clicks.
