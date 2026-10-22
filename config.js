@@ -84,12 +84,9 @@ window.PITCH_CONFIG = {
 
   phases: ["Sell", "Source", "Make", "Deliver", "Support"],
 
-  /* Demo animation behaviour on step slides
-     - autoSwitch: after the "How it works" animation, show the real
-       screenshot (only if that screenshot file exists), then repeat.
-     - screenshotSeconds: how long the screenshot stays on screen.
-     - Tip: a step's "shot" can also be a screen recording (.mp4 / .webm). */
-  demo: { autoSwitch: true, screenshotSeconds: 6 },
+  /* Step slides: if a step's screenshot file exists it is shown directly;
+     if not, the animated demo plays in its place. No tabs, no clicks.
+     A step's "shot" can also be a screen recording (.mp4 / .webm). */
 
   /* ---------- THE CHAIN ---------- */
   steps: [
