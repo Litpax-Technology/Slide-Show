@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Litpax Technology — How Our System Runs</title>
+  <meta name="description" content="How Litpax Technology runs every step — from enquiry to after-sales service — on one connected digital system.">
+  <link rel="icon" href="assets/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="viewport">
+    <div id="stage" aria-live="polite"></div>
+  </main>
+
+  <div id="progress"><span></span></div>
+
+  <nav class="hud" aria-label="Presentation controls">
+    <button id="btnPrev" title="Previous (←)" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span id="counter">1 / 1</span>
+    <button id="btnNext" title="Next (→)" aria-label="Next slide">
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <i class="hud-sep"></i>
+    <button id="btnOverview" title="All slides (O)" aria-label="All slides">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </button>
+    <button id="btnFull" title="Full screen (F)" aria-label="Full screen">
+      <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </nav>
+
+  <div id="overview" hidden>
+    <div class="ov-panel">
+      <div class="ov-head">
+        <h3>All slides</h3>
+        <button id="btnCloseOv" aria-label="Close">✕</button>
+      </div>
+      <div id="ovGrid" class="ov-grid"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
