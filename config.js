@@ -66,6 +66,14 @@ window.PITCH_CONFIG = {
       "Our quality. Our commitment. Our future."
     ],
     lines: {
+      "challenges": "Buying batteries shouldn't feel like a gamble. Inconsistent quality. No idea where your order is. Warranty arguments. Service calls that get lost. We built Litpax to fix exactly this.",
+      "gains": "Every one of these problems is answered by a system — so you save time, see fewer defects, and get fast, fair replacements.",
+      "why": "Why choose Litpax? Built in-house. Every battery traceable. Quality at every station. Your order, live. Service that follows through. And fair, fast warranty.",
+      "track": "This is a real order inside our ERP. Every item is followed — from the moment you order, through production and billing, until it leaves our gate.",
+      "versus": "Here is the difference, side by side. Where a typical supplier asks you to call and wait, we show you everything, live.",
+      "products": "Our range covers two-wheeler packs, e-cycle and prismatic packs — with matched smart chargers.",
+      "voices": "And here is what our partners say about us.",
+      "start": "Working with us is simple. Talk to us, we recommend the right pack, and from your very first order, you see everything live.",
       "title": "Welcome to Litpax Technology. Let us show you how our system runs — from order to delivery, fully connected.",
       "ambition": "Our goal is simple, and bold. Zero percent defect in manufacturing. One team. One goal. Every pack, right the first time.",
       "miles": "Every milestone has brought us closer to that goal.",
@@ -90,12 +98,97 @@ window.PITCH_CONFIG = {
       "trace": "One barcode. Complete history. Where it was built, who built it, when it shipped — and every service since.",
       "fms": "Above it all runs our flow management system. Every step has an owner, and a deadline.",
       "control": "Our leadership sees the whole business on one screen — daily, and weekly.",
-      "gallery": "All of this runs on a family of apps, built in-house.",
       "promise": "Because we don't just sell products. We sell service. Support. Trust. Uptime.",
-      "why": "Full traceability. Real-time visibility. Faster response. That is what partnering with Litpax means.",
       "end": "Let's build together. Litpax Technology — our quality, our commitment, our future."
     }
   },
+
+
+  /* ---------- VALUE SLIDES (why the client should choose Litpax) ---------- */
+  value: {
+    challenges: {
+      kicker: "The reality today",
+      title: "Buying batteries shouldn't feel like a gamble.",
+      sub: "These are the problems OEMs and dealers tell us about every week.",
+      answer: "We built Litpax to fix exactly this.",
+      items: [
+        { t: "Inconsistent quality", d: "Two packs of the same model rarely perform the same." },
+        { t: "No idea where the order is", d: "Status means calling the supplier again and again." },
+        { t: "Warranty becomes an argument", d: "No record of the battery, so every claim is a debate." },
+        { t: "Service calls get lost", d: "A complaint is noted on WhatsApp — and forgotten." },
+        { t: "Vehicles stand idle", d: "Every day of downtime costs you and your customer." }
+      ]
+    },
+    gains: {
+      kicker: "What you get",
+      title: "Every problem, answered by a system.",
+      rows: [
+        ["Calling for order status", "Live partner dashboard", "Your time saved"],
+        ["No record of the battery", "Barcode history for every pack", "Instant root cause"],
+        ["Quality checked only at the end", "Checks at every station, every shift", "Fewer defects"],
+        ["Warranty disputes", "Rule-based exchange with audit trail", "Fast, fair replacement"],
+        ["Service calls forgotten", "Ticket tracked until it is solved", "Less downtime"]
+      ]
+    },
+    whyKicker: "Why choose us",
+    whyTitle: "Why choose Litpax.",
+    track: {
+      kicker: "Order tracking",
+      title: "How we track your order.",
+      sub: "This is a real order inside our ERP. Every item is followed from the moment you order until it leaves our gate.",
+      shot: "screenshots/erp-track.png",
+      bar: "Litpax ERP · Order tracking",
+      note: "Real screen · customer details blurred",
+      stages: [
+        { t: "Order received", d: "Your order, items and dispatch plan are recorded.", pos: 0 },
+        { t: "Item-wise plan", d: "Each battery gets its own Item ID — produced, billed and dispatched counts per item.", pos: 0.33 },
+        { t: "Production", d: "Actual start and completion date for every item, with delays flagged.", pos: 0.6 },
+        { t: "Billing", d: "Invoice linked to each item ID.", pos: 0.73 },
+        { t: "Dispatch", d: "Quantity, date, transport and LR number for every item.", pos: 0.86 }
+      ]
+    },
+    versus: {
+      kicker: "The difference",
+      title: "Litpax vs a typical supplier.",
+      them: "Typical supplier",
+      rows: [
+        ["Order status", "Call and wait", "Live dashboard, any time"],
+        ["Battery history", "Not recorded", "Every station & employee, scanned"],
+        ["Quality checks", "At the end, if at all", "At every station + daily checklist"],
+        ["Dispatch accuracy", "Manual counting", "Every unit scanned against your order"],
+        ["Service calls", "Lost in chats", "Ticket tracked until solved"],
+        ["Warranty claims", "Back-and-forth", "Rule-based flow with audit trail"]
+      ]
+    },
+    products: {
+      kicker: "Our product range",
+      title: "Packs for the way India moves.",
+      heroLabel: "74V · 36Ah Lithium Ion",
+      lines: [   // from the ERP / production lines — please verify before presenting
+        { name: "2-Wheeler packs", desc: "Lithium ion packs for electric scooters and bikes.", specs: ["48V 32Ah", "60V 32Ah", "74V 40Ah", "74V 36Ah"] },
+        { name: "E-Cycle packs", desc: "Lightweight packs built on a dedicated E-Cycle line.", specs: ["Custom configs"] },
+        { name: "Prismatic packs", desc: "Prismatic-cell packs from our prismatic line.", specs: ["Custom configs"] },
+        { name: "Smart chargers", desc: "Matched chargers for every pack we make.", specs: ["54V 8A", "67V 8A", "84V 8A"] }
+      ]
+    },
+    start: {
+      kicker: "Get started",
+      title: "Working with us is simple.",
+      steps: [
+        { t: "Talk to us", d: "Call our toll-free number or send an enquiry." },
+        { t: "We recommend", d: "We understand your vehicle and suggest the right pack." },
+        { t: "First order", d: "You get a private live dashboard for your orders." },
+        { t: "Ongoing support", d: "Tracked delivery, service tickets and fair warranty." }
+      ]
+    }
+  },
+
+  /* ---------- TESTIMONIALS (real entries from the Customer Review form)
+     Take each partner's permission before presenting their name. ---------- */
+  testimonials: [
+    { quote: "Best service.", name: "KPR Electric Vehicles", place: "Amritsar, Punjab" },
+    { quote: "Lithium batteries saaf urja, behtar performance aur bharosemand power solutions ka bhavishya hain.", name: "Poonam", place: "Sirsa, Haryana" }
+  ],
 
   /* ---------- AMBITION slide (Milestone 2027) ---------- */
   ambition: {
@@ -367,28 +460,15 @@ window.PITCH_CONFIG = {
   ],
 
   /* ---------- APP GALLERY (login pages / home screens) ---------- */
-  gallery: [
-    { name: "Litpax ERP", shot: "screenshots/erp-login.png" },
-    { name: "IMS", shot: "screenshots/ims-login.png" },
-    { name: "SOMS", shot: "screenshots/soms-login.png" },
-    { name: "Production Tracker", shot: "screenshots/plt-login.png" },
-    { name: "Service Hub", shot: "screenshots/service-login.png" },
-    { name: "Task Manager", shot: "screenshots/tasks-login.png" },
-    { name: "Sales Lead Tracker", shot: "screenshots/lead-login.png" },
-    { name: "Battery Exchange", shot: "screenshots/warranty-login.png" },
-    { name: "Gate Pass", shot: "screenshots/gatepass-login.png" },
-    { name: "R&D Tracker", shot: "screenshots/rnd-login.png" },
-    { name: "Internal Portal", shot: "screenshots/portal.png" },
-    { name: "Client Dashboard", shot: "screenshots/client-dashboard.png" }
-  ],
+  gallery: [],   // app family slide hidden — add apps here to show it again
 
   /* ---------- WHY LITPAX ---------- */
   why: [
-    { t: "Full traceability", d: "Every battery's journey — material, station, employee, dispatch, service — on record." },
-    { t: "Real-time visibility", d: "Live status of your order at any moment, not after a phone call." },
-    { t: "Faster response", d: "Service calls, repairs and replacements run on defined timelines." },
-    { t: "Accountability", d: "Every step has an owner and a deadline. Delays surface automatically." },
-    { t: "Consistent quality", d: "Daily checks, plan vs achieved reviews and material reconciliation." },
-    { t: "Built in-house", d: "Our own systems, shaped around our process — and improving every week." }
+    { t: "Built in-house, in Haryana", d: "Packs are assembled and tested in our own plant — not traded, not outsourced." },
+    { t: "Every battery traceable", d: "Each pack carries a barcode history: stations, employees, dispatch and service." },
+    { t: "Quality at every station", d: "Scans, daily checklists and plan-vs-achieved reviews — chasing a 0% defect goal." },
+    { t: "Your order, live", d: "A private dashboard shows your orders, service calls and repairs — no follow-up calls." },
+    { t: "Service that follows through", d: "Every call becomes a ticket that is tracked step by step until it is solved." },
+    { t: "Fair, fast warranty", d: "Replacements follow a clear approved flow with a full audit trail — no arguments." }
   ]
 };
