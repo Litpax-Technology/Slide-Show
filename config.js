@@ -39,6 +39,10 @@ window.PITCH_CONFIG = {
   /* ---------- CINEMATIC INTRO (plays when the deck opens; any key skips, "I" replays) ---------- */
   intro: {
     enabled: true,
+    /* words that land on the beat (keep them short) */
+    kinetic: ["Cells.", "Strips.", "BMS.", "Every station scanned.", "Every battery tracked.", "Zero compromise."],
+    /* labels for the exploded battery, bottom layer first */
+    layers: ["Base tray", "Lithium cells", "Nickel strips", "Smart BMS", "Litpax casing"],
     chargeLabel: "Litpax 74V · Charging",
     lines: ["Every call answered.", "Every battery tracked."],
     closing: "Our quality. Our commitment. Our future."
@@ -58,14 +62,13 @@ window.PITCH_CONFIG = {
     pitch: 1,        // keep at 1 — lowering it makes browser voices sound muddy
     folder: "assets/voice/",
     outro: [
-      "Litpax Technology.",
-      "Our quality. Our commitment. Our future.",
+      "From Haryana... powering India's electric journey.",
+      "Litpax Technology. Our quality. Our commitment. Our future.",
       "Let's build together."
     ],
     intro: [
-      "Every great battery begins... with one element.",
-      "Lithium. The heart of every Litpax pack.",
-      "Every step. Every customer.",
+      "Engineered... layer by layer.",
+      "Built in-house. Tracked at every step.",
       "Every call answered. Every battery tracked.",
       "Our quality. Our commitment. Our future."
     ],
@@ -276,7 +279,16 @@ window.PITCH_CONFIG = {
   musicVolume: 0.35,
 
   /* Closing film (plays after the last slide, or press E) */
-  outro: { headline: "Let's build together.", thanks: "Thank you." },
+  outro: {
+    headline: "Let's build together.",
+    thanks: "Thank you.",
+    mapLine: "From Haryana — powering India's electric journey.",
+    map: {
+      hub: [76.6, 28.9],          // Rohtak, Haryana (lon, lat)
+      /* unlabelled destination points for the light arcs (lon, lat) — edit freely */
+      targets: [[74.9, 31.6], [75.8, 30.9], [75.1, 27.6], [72.6, 23.0], [73.8, 18.5], [77.6, 12.9], [78.5, 17.4], [80.9, 26.8], [85.8, 20.3], [88.4, 22.6], [91.7, 26.1]]
+    }
+  },
 
   /* Step slides: if a step's screenshot file exists it is shown directly;
      if not, the animated demo plays in its place. No tabs, no clicks.
