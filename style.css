@@ -2498,3 +2498,12 @@ h2 { letter-spacing: -.035em; }
 .pf-world { opacity: 0; transition: left 2.2s cubic-bezier(.65,0,.35,1), opacity 2s ease, filter 1.2s ease; }
 #intro.f-batt .pf-world { opacity: 1; }
 #intro.f-end .pf-world { opacity: 0; }
+/* product range with 6 cards: 3 columns, compact cards, smaller hero pack */
+.prod-left { width: 300px; }
+.prod-stage { height: 330px; }
+.prod-stage .batt-art { height: 320px; }
+.prod-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.prod-card { padding: 13px 14px; gap: 5px; }
+.prod-card b { font-size: 15px; }
+.prod-card > span { font-size: 12px; }
+.prod-specs em { font-size: 10.5px; padding: 3px 7px; }
