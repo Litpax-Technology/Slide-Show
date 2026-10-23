@@ -123,6 +123,7 @@
   const MILES = (C.milestones || []).filter((m) => m && m.year && m.title);
   const INTRO = C.intro || { enabled: false };
   const VAL = C.value || {};
+  const DED = C.dedication || { show: false };
 
   function chrome(inner, opts) {
     opts = opts || {};
@@ -2682,6 +2683,11 @@
           <span>${esc(C.company.name)}</span>
           <em>Press any key to return</em>
         </div>
+        ${DED.show ? `
+        <div class="oc-ded">
+          ${(DED.lines || []).map((l, i) => `<p class="d${i + 1}"><span class="l1">${words(l[0], 0)}</span><span class="l2">${words(l[1] || "", l[0].split(" ").length)}</span></p>`).join("")}
+          <span class="sig">${esc(DED.sign || "")}</span>
+        </div>` : ""}
         ${fxLayers()}`;
       box.hidden = false; box.className = "outro";
       document.body.classList.add("outro-zoom");                 // the deck melts into the film
@@ -2690,6 +2696,7 @@
       const off = (cls) => box.classList.remove(cls);
       const oat = (ms, fn) => oTimers.push(setTimeout(fn, ms));
       const say = (n) => { const t = (VO.outro || [])[n]; if (t) Voice.say("outro-" + (n + 1), t, { rate: 0.88 }); };
+      const dsay = (n) => { const l = (DED.lines || [])[n]; if (l && DED.voice !== false) Voice.say("ded-" + (n + 1), l.join(" "), { rate: 0.86 }); };
       [
         [30,    () => { oc("o-on"); SFX.whoosh(1.6, true); SFX.musicLevel(0.05, 1.5); runMap(box.querySelector(".oc-map")); }],
         [1500,  () => SFX.shimmer()],                              // the Earth appears
@@ -2705,8 +2712,13 @@
           [10500, () => oc("o-t1")],
           [11300, () => oc("o-t2")],
           [13400, () => { oc("o-build"); say(2); }],
-          [17200, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
-          [18400, () => { api.outroEnd = true; }]
+          [17200, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(DED.show ? 0.035 : 0.02, 3); }],
+          ...(DED.show ? [
+            [19800, () => { oc("o-ded"); oc("o-d1"); dsay(0); }],      // "You built the company. We built the systems to keep up with you."
+            [24600, () => { oc("o-d2"); dsay(1); }],                   // "Two people. One vision. And a team proud to follow it."
+            [29200, () => { oc("o-sig"); SFX.shimmer(); }],            // — With respect, Team MIS
+            [31000, () => { SFX.musicLevel(0.015, 4); api.outroEnd = true; }]
+          ] : [[18400, () => { api.outroEnd = true; }]])
         ].map(([ms, fn]) => [ms + 3800, fn])                       // everything after the space shot moves later
       ].forEach(([ms, fn]) => oat(ms, fn));
     }
@@ -2716,6 +2728,7 @@
         oTimers.forEach(clearTimeout); oTimers = [];
         Voice.stop();
         box.classList.add("o-on", "o-final", "fast"); api.outroEnd = true;
+        if (DED.show) box.classList.add("o-ded", "o-d1", "o-d2", "o-sig");
         SFX.musicLevel(0.02, 1);
         return;
       }
