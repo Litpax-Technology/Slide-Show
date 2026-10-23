@@ -43,6 +43,8 @@ window.PITCH_CONFIG = {
     kinetic: ["Cells.", "Strips.", "BMS.", "Every station scanned.", "Every battery tracked.", "Zero compromise."],
     /* labels for the exploded battery, bottom layer first */
     layers: ["Base tray", "Lithium cells", "Nickel strips", "Smart BMS", "Litpax casing"],
+    /* the stage shot: two silhouettes carry the halves of the name ("m" / "f" figure) */
+    stage: { left: "LIT", right: "PAX", leftFigure: "m", rightFigure: "f", tagline: "Two people. One vision." },
     chargeLabel: "Litpax 74V · Charging",
     lines: ["Every call answered.", "Every battery tracked."],
     closing: "Our quality. Our commitment. Our future."
@@ -81,6 +83,7 @@ window.PITCH_CONFIG = {
       "challenges": "Buying batteries shouldn't feel like a gamble. Inconsistent quality. No idea where your order is. Warranty arguments. Service calls that get lost. We built Litpax to fix exactly this.",
       "gains": "Every one of these problems is answered by a system — so you save time, see fewer defects, and get fast, fair replacements.",
       "why": "Why choose Litpax? Built in-house. Every battery traceable. Quality at every station. Your order, live. Your own sales and service CRM. And fair, fast warranty.",
+      "stage": "Two people. One vision.",
       "crm": "And you are never talking to a stranger. Your Sales CRM owns your orders, from quotation to delivery. Your Service CRM owns every service call, until your vehicle is back on the road.",
       "track": "This is a real order inside our ERP. Every item is followed — from the moment you order, through production and billing, until it leaves our gate.",
       "versus": "Here is the difference, side by side. Where a typical supplier asks you to call and wait, we show you everything, live.",
