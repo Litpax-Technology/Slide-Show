@@ -2331,6 +2331,9 @@
       }
       return c;
     }
+    /* Closing map: space → a dotted Earth turns to India → camera zooms in → the globe's India becomes the flat map
+       → light arcs fly out from the Haryana hub → everything gathers into one point */
+    const GLOBE_END = 5.2;            // seconds of the space / globe shot
     function runMap(cv) {
       const M = (C.outro && C.outro.map) || {};
       const hub = M.hub || [76.6, 28.9];
@@ -2346,40 +2349,113 @@
       const css = getComputedStyle(document.documentElement);
       const rgb = css.getPropertyValue("--accent-rgb").trim() || "238,90,36";
       const rgbL = css.getPropertyValue("--accent-light-rgb").trim() || "255,164,119";
+      const R2D = Math.PI / 180;
+      const ease = (t) => (t < 0 ? 0 : t > 1 ? 1 : t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const lerp = (a, b, t) => a + (b - a) * t;
+
+      // India dots (fine grid) — flat map positions + their lon/lat for the globe
       const dots = [], step = 0.52;
       for (let la = lat0; la <= lat1; la += step) for (let lo = lon0; lo <= lon1; lo += step / k) {
         if (!inPoly(lo, la, INDIA)) continue;
-        const [x, y] = P(lo, la), a = Math.random() * Math.PI * 2, r = Math.max(W, H) * (0.5 + Math.random() * 0.6);
-        dots.push({ x, y, sx: W / 2 + Math.cos(a) * r, sy: H / 2 + Math.sin(a) * r, d: Math.random() * 0.6, tw: Math.random() * Math.PI * 2 });
+        const [x, y] = P(lo, la);
+        dots.push({ x, y, lo, la, tw: Math.random() * Math.PI * 2 });
       }
+      // the rest of the Earth: an even dotted sphere
+      const globe = [];
+      for (let la = -78; la <= 78; la += 4.2) {
+        const st = 4.2 / Math.max(0.2, Math.cos(la * R2D));
+        for (let lo = -180; lo < 180; lo += st) if (!inPoly(lo, la, INDIA)) globe.push({ lo, la });
+      }
+      // stars
+      const stars = Array.from({ length: 240 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.3 + 0.3, tw: Math.random() * 6 }));
+
+      // orthographic projection, view centred on (vla, vlo)
+      const proj = (lo, la, vlo, vla, R, cx, cy) => {
+        const p = la * R2D, l = (lo - vlo) * R2D, p0 = vla * R2D;
+        const cosc = Math.sin(p0) * Math.sin(p) + Math.cos(p0) * Math.cos(p) * Math.cos(l);
+        return [cx + R * Math.cos(p) * Math.sin(l), cy - R * (Math.cos(p0) * Math.sin(p) - Math.sin(p0) * Math.cos(p) * Math.cos(l)), cosc];
+      };
+
       const H0 = P(hub[0], hub[1]);
       const arcs = targets.map((t, i) => {
         const B = P(t[0], t[1]), mx = (H0[0] + B[0]) / 2, my = (H0[1] + B[1]) / 2, dist = Math.hypot(B[0] - H0[0], B[1] - H0[1]);
         return { B, c: [mx, my - dist * 0.38], d: i * 0.12 };
       });
-      const qp = (a, t) => {
-        const u = 1 - t;
-        return [u * u * H0[0] + 2 * u * t * a.c[0] + t * t * a.B[0], u * u * H0[1] + 2 * u * t * a.c[1] + t * t * a.B[1]];
-      };
-      const ease = (t) => (t < 0 ? 0 : t > 1 ? 1 : t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const qp = (a, t) => { const u = 1 - t; return [u * u * H0[0] + 2 * u * t * a.c[0] + t * t * a.B[0], u * u * H0[1] + 2 * u * t * a.c[1] + t * t * a.B[1]]; };
+
       const T0 = performance.now(), CX = W / 2, CY = H * 0.42;
-      const TA = 2.4, TB = 2.6, TBdur = 3.6, TC = 6.6, TCdur = 1.3;
+      const TB = GLOBE_END + 0.3, TC = TB + 4.0, TCdur = 1.3;
+      const R0 = H * 0.30, RZ = H * 1.42;                       // globe radius: wide shot → zoomed on India
       const frame = (now) => {
         if (!api.outroOn || !cv.isConnected) return;
-        const t = (now - T0) / 1000;
+        const t = (now - T0) / 1000 - 0.9;                     // wait until the deck has faded to black
         g.clearRect(0, 0, W, H);
-        const gather = ease((t - TC) / TCdur);
-        // map dots
-        for (const p of dots) {
-          const e = ease((t - p.d) / TA);
-          let x = p.sx + (p.x - p.sx) * e, y = p.sy + (p.y - p.sy) * e;
-          if (gather > 0) { x += (CX - x) * gather; y += (CY - y) * gather; }
-          const tw = 0.55 + 0.45 * Math.sin(t * 2 + p.tw);
-          g.globalAlpha = Math.min(1, e * 1.4) * (0.35 + 0.35 * tw) * (1 - gather * 0.6);
-          g.fillStyle = `rgb(${rgbL})`;
-          g.beginPath(); g.arc(x, y, 1.6, 0, 6.283); g.fill();
+        if (t < 0) { requestAnimationFrame(frame); return; }
+
+        // ---------- shot 1: space + rotating Earth + zoom ----------
+        const appear = ease(t / 1.2);
+        const turn = ease((t - 0.3) / 2.9);                     // rotate India to the front
+        const zoom = ease((t - 3.0) / 1.7);                     // dive towards India
+        const morph = ease((t - 3.9) / 1.3);                    // globe India → flat map
+        const vlo = lerp(-10, 80, turn), vla = lerp(5, 22, turn);
+        const R = lerp(R0 * lerp(0.86, 1, appear), RZ, zoom);
+        const gcx = W / 2, gcy = lerp(H * 0.5, H * 0.47, zoom);
+
+        if (t < GLOBE_END + 0.8) {
+          const fadeSpace = 1 - ease((t - 4.4) / 1.2);
+          // stars (streak outward while zooming)
+          g.fillStyle = "#fff";
+          for (const s0 of stars) {
+            const a = (0.35 + 0.35 * Math.sin(t * 2 + s0.tw)) * appear * fadeSpace;
+            if (a <= 0.01) continue;
+            if (zoom > 0.02 && zoom < 0.98) {
+              const dx = s0.x - W / 2, dy = s0.y - H / 2, len = 0.18 * zoom * (1 - zoom) * 4;
+              g.strokeStyle = `rgba(255,255,255,${a})`; g.lineWidth = s0.r;
+              g.beginPath(); g.moveTo(s0.x, s0.y); g.lineTo(s0.x + dx * len, s0.y + dy * len); g.stroke();
+            } else { g.globalAlpha = a; g.beginPath(); g.arc(s0.x, s0.y, s0.r, 0, 6.283); g.fill(); g.globalAlpha = 1; }
+          }
+          // atmosphere glow + rim
+          const ga = appear * (1 - morph);
+          if (ga > 0.01) {
+            const atm = g.createRadialGradient(gcx, gcy, R * 0.9, gcx, gcy, R * 1.22);
+            atm.addColorStop(0, `rgba(${rgb},${0.28 * ga})`); atm.addColorStop(1, `rgba(${rgb},0)`);
+            g.fillStyle = atm; g.beginPath(); g.arc(gcx, gcy, R * 1.22, 0, 6.283); g.fill();
+            const body = g.createRadialGradient(gcx - R * 0.35, gcy - R * 0.4, R * 0.1, gcx, gcy, R);
+            body.addColorStop(0, `rgba(40,44,60,${0.55 * ga})`); body.addColorStop(1, `rgba(8,9,14,${0.85 * ga})`);
+            g.fillStyle = body; g.beginPath(); g.arc(gcx, gcy, R, 0, 6.283); g.fill();
+            g.strokeStyle = `rgba(${rgbL},${0.35 * ga})`; g.lineWidth = 1.2; g.beginPath(); g.arc(gcx, gcy, R, 0, 6.283); g.stroke();
+            // the rest of the world
+            g.fillStyle = "rgba(200,206,220,1)";
+            for (const d of globe) {
+              const [x, y, c] = proj(d.lo, d.la, vlo, vla, R, gcx, gcy);
+              if (c <= 0 || x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+              g.globalAlpha = (0.12 + 0.4 * c) * ga;
+              g.beginPath(); g.arc(x, y, 1.1 + c * 0.6, 0, 6.283); g.fill();
+            }
+            g.globalAlpha = 1;
+          }
         }
-        // arcs + travelling pulses
+
+        // ---------- India: on the globe, then morphing into the flat map ----------
+        const gather = ease((t - TC) / TCdur);
+        g.fillStyle = `rgb(${rgbL})`;
+        for (const p of dots) {
+          let x, y, a;
+          const [gx, gy, c] = proj(p.lo, p.la, vlo, vla, R, gcx, gcy);
+          const tw = 0.55 + 0.45 * Math.sin(t * 2 + p.tw);
+          if (morph < 1) {
+            x = lerp(gx, p.x, morph); y = lerp(gy, p.y, morph);
+            a = (c > 0 ? 0.55 + 0.45 * c : 0) * appear;
+            a = lerp(a, 0.35 + 0.35 * tw, morph);
+          } else { x = p.x; y = p.y; a = 0.35 + 0.35 * tw; }
+          if (gather > 0) { x += (CX - x) * gather; y += (CY - y) * gather; a *= 1 - gather * 0.6; }
+          if (a <= 0.01) continue;
+          g.globalAlpha = a;
+          g.beginPath(); g.arc(x, y, morph < 1 ? 1.3 + (1 - morph) * 0.4 : 1.6, 0, 6.283); g.fill();
+        }
+        g.globalAlpha = 1;
+
+        // ---------- arcs + travelling pulses from the hub ----------
         if (t > TB && gather < 1) {
           g.globalCompositeOperation = "lighter";
           arcs.forEach((a) => {
@@ -2400,7 +2476,7 @@
           g.shadowBlur = 0;
           g.globalCompositeOperation = "source-over";
         }
-        // hub
+        // ---------- hub ----------
         if (t > TB - 0.4) {
           const hp = Math.min(1, (t - TB + 0.4) / 0.6), hx = H0[0] + (CX - H0[0]) * gather, hy = H0[1] + (CY - H0[1]) * gather;
           const rr = 7 + 3 * Math.sin(t * 3) + gather * 30;
@@ -2458,18 +2534,22 @@
       const say = (n) => { const t = (VO.outro || [])[n]; if (t) Voice.say("outro-" + (n + 1), t, { rate: 0.88 }); };
       [
         [30,    () => { oc("o-on"); SFX.whoosh(1.6, true); SFX.musicLevel(0.05, 1.5); runMap(box.querySelector(".oc-map")); }],
-        [900,   () => SFX.shimmer()],
-        [2600,  () => { oc("o-cap"); SFX.charge(); say(0); }],     // "From Haryana — powering India's electric journey."
-        [5300,  () => SFX.riser(1.4)],
-        [6600,  () => { oc("o-gather"); SFX.whoosh(1.2, true); }], // the whole map gathers into one point
-        [7900,  () => { oc("o-line"); SFX.drop(); }],              // a line of light…
-        [8400,  () => { oc("o-logo"); say(1); }],                  // …opens into the logo
-        [9700,  () => { oc("o-up"); oc("o-t0"); }],
-        [10500, () => oc("o-t1")],
-        [11300, () => oc("o-t2")],
-        [13400, () => { oc("o-build"); say(2); }],
-        [17200, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
-        [18400, () => { api.outroEnd = true; }]
+        [1500,  () => SFX.shimmer()],                              // the Earth appears
+        [3900,  () => { SFX.whoosh(2.2, true); SFX.riser(1.6); }], // camera dives towards India
+        [5500,  () => { SFX.drop(); oc("o-map"); }],               // the globe becomes the map
+        ...[
+          [2600,  () => { oc("o-cap"); SFX.charge(); say(0); }],   // "From Haryana — powering India's electric journey."
+          [5300,  () => SFX.riser(1.4)],
+          [6600,  () => { oc("o-gather"); SFX.whoosh(1.2, true); }],
+          [7900,  () => { oc("o-line"); SFX.drop(); }],
+          [8400,  () => { oc("o-logo"); say(1); }],
+          [9700,  () => { oc("o-up"); oc("o-t0"); }],
+          [10500, () => oc("o-t1")],
+          [11300, () => oc("o-t2")],
+          [13400, () => { oc("o-build"); say(2); }],
+          [17200, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
+          [18400, () => { api.outroEnd = true; }]
+        ].map(([ms, fn]) => [ms + 3800, fn])                       // everything after the space shot moves later
       ].forEach(([ms, fn]) => oat(ms, fn));
     }
     function outroKey() {
