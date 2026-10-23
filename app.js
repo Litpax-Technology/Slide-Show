@@ -1573,6 +1573,14 @@
       });
     };
     api.tick = () => api.whoosh(0.45, false);
+    api.kick = (hard) => {
+      if (!ac) return;
+      const t = now(), o = ac.createOscillator();
+      o.type = "sine"; o.frequency.setValueAtTime(hard ? 170 : 140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.22);
+      o.connect(gainEnv(t, 0.004, hard ? 0.5 : 0.32, hard ? 1 : 0.8)); o.start(t); o.stop(t + 0.6);
+      const n = noise(), f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 2500;
+      n.connect(f); f.connect(gainEnv(t, 0.002, 0.05, 0.18)); n.start(t); n.stop(t + 0.08);
+    };
     // Background music: slow cinematic progression (Am9 – Fmaj7 – Cadd9 – G6), soft pads,
     // a gentle piano-like arpeggio and a sub bass, all through a generated reverb.
     let music = null, musicLevel = 0.06;
@@ -2145,6 +2153,39 @@
       if (img && !img.complete) img.onload = fit; else fit();
     };
 
+    // Kinetic typography — bold words land on the beat
+    function kineticScene() {
+      const W = INTRO.kinetic || ["Cells.", "Strips.", "BMS.", "Every station scanned.", "Every battery tracked.", "Zero compromise."];
+      return `
+        <div class="kt">
+          <div class="kt-bg"><i></i><i></i><i></i><i></i></div>
+          <div class="kt-grid"></div>
+          ${W.map((w, i) => `<div class="kt-w m${i % 5}${i === W.length - 1 ? " last" : ""}" data-k="w${i}">${
+            i % 5 === 2 ? [...w].map((ch, j) => `<span style="--l:${j}">${ch === " " ? "&nbsp;" : esc(ch)}</span>`).join("") : `<span>${esc(w)}</span>`
+          }</div>`).join("")}
+          <div class="kt-streak"></div>
+          <div class="kt-flash"></div>
+        </div>`;
+    }
+    // Exploded 3D battery — layers separate with labels, then snap together
+    function explodedScene() {
+      const L = INTRO.layers || ["Base tray", "Lithium cells", "Nickel strips", "Smart BMS", "Litpax casing"];
+      const logo = C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="">` : `<b>${esc(C.company.shortName)}</b>`;
+      return `
+        <div class="eb">
+          <div class="eb-floor"></div>
+          <div class="eb-rig">
+            <div class="eb-l l0"></div>
+            <div class="eb-l l1"></div>
+            <div class="eb-l l2"></div>
+            <div class="eb-l l3"><i></i><i></i><i></i><i></i><em></em></div>
+            <div class="eb-l l4">${logo}</div>
+          </div>
+          <div class="eb-labels">${L.map((t, i) => `<div class="eb-lab b${i}" style="--i:${4 - i}"><i></i><span>${pad(i + 1)}</span><b>${esc(t)}</b></div>`).join("")}</div>
+          <div class="eb-flash"></div>
+        </div>`;
+    }
+
     function build() {
       const lines = (INTRO.lines || []).map((l, i) => `<span class="il" style="--i:${i}">${esc(l)}</span>`).join("");
       const closing = (INTRO.closing || "").split(".").filter((x) => x.trim())
@@ -2165,9 +2206,8 @@
             <div class="in-closing">${closing}</div>
           </div>
         </div>
-        ${assembleScene()}
-        <div class="in-pulse"></div>
-        ${lxMark()}
+        ${kineticScene()}
+        ${explodedScene()}
         <div class="in-card"><span>${esc(C.company.name.replace(/ Pvt\. Ltd\.?/i, ""))}</span><em>presents</em></div>
         ${fxLayers()}
         <div class="in-skip">Press any key to skip</div>`;
@@ -2227,33 +2267,31 @@
       box.style.setProperty("--cover", Math.max(window.innerWidth / 1280, window.innerHeight / 720));
       void box.offsetWidth;
       const D = 2600;   // the opening title card plays first
+      const KW = (INTRO.kinetic || ["", "", "", "", "", ""]).length, BEAT = 1050;
+      const kt = () => box.querySelector(".kt");
+      const word = (i) => {
+        const prev = box.querySelector('.kt-w.on'); if (prev) { prev.classList.remove("on"); prev.classList.add("out"); }
+        const w = box.querySelector(`[data-k="w${i}"]`); if (w) w.classList.add("on");
+        const k = kt(); k.classList.remove("hit"); void k.offsetWidth; k.classList.add("hit");
+        if (i === KW - 1) { SFX.kick(true); SFX.drop(); } else SFX.kick();
+      };
       const T = [
         [150,   () => { addC("p-card"); SFX.music(0.03); }],
         [2300,  () => addC("p-card-out")],
-        [D + 100,   () => { addC("p-pulse"); SFX.heartbeat(); sizeMark(); }],
-        [D + 500,   () => line(0)],                                   // "Every great battery begins with one element."
-        [D + 1300,  () => SFX.heartbeat()],
-        [D + 1700,  () => { addC("a-atom"); SFX.whoosh(1.4, true); SFX.shimmer(); }],   // lithium atom forms
-        [D + 4100,  () => { addC("a-tile"); SFX.charge(); SFX.shimmer(); }],            // collapses into the Li tile
-        [D + 4300,  () => line(1)],                                   // "Lithium. The heart of every Litpax pack."
-        [D + 5700,  () => { addC("a-word"); SFX.whoosh(0.8); }],      // "tpax" slides out of "Li"
-        [D + 6600,  () => { addC("a-logo"); SFX.shimmer(); }],        // becomes the real logo
-        [D + 7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); SFX.musicLevel(0.045, 2); }],
-        [D + 8000,  () => { addC("as-fly"); setAs("Cells"); SFX.whoosh(1.2); }],
-        [D + 8350,  () => SFX.beep()], [D + 8700, () => SFX.beep()], [D + 9050, () => SFX.beep()],
-        [D + 9900,  () => { addC("as-weld"); setAs("Nickel strips"); SFX.shimmer(); }],
-        [D + 10700, () => { addC("as-board"); setAs("BMS"); SFX.beep(); }],
-        [D + 11400, () => { addC("as-wrap"); setAs("Casing"); SFX.whoosh(0.9); }],
-        [D + 11500, () => SFX.riser(1.5)],
-        [D + 12300, () => { addC("as-seal"); setAs("Sealed"); }],
-        [D + 13000, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],   // power on
-        [D + 13300, () => line(2)],                                   // "Every step. Every customer."
-        [D + 13900, () => addC("p-charge")],
-        [D + 15000, () => { addC("p-brand"); SFX.shimmer(); }],
-        [D + 15700, () => { addC("p-lines"); line(3); }],             // "Every call answered. Every battery tracked."
-        [D + 18400, () => { addC("p-close"); line(4); }],             // "Our quality. Our commitment. Our future."
-        [D + 22200, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
-        [D + 23200, finish]
+        [D + 100, () => { addC("k-on"); SFX.musicLevel(0.06, 1); }],
+        ...Array.from({ length: KW }, (_, i) => [D + 300 + i * BEAT, () => word(i)]),
+        [D + 300 + KW * BEAT + 700,  () => { addC("k-out"); SFX.whoosh(1.2, true); }],
+        [D + 300 + KW * BEAT + 1000, () => { addC("b-show"); SFX.shimmer(); }],      // assembled pack, slowly orbiting
+        [D + 300 + KW * BEAT + 2300, () => { addC("b-explode"); SFX.whoosh(1.4); line(0); }],   // "Engineered… layer by layer."
+        [D + 300 + KW * BEAT + 5600, () => SFX.riser(1.2)],
+        [D + 300 + KW * BEAT + 6800, () => { addC("b-snap"); SFX.kick(true); }],     // snap together
+        [D + 300 + KW * BEAT + 7200, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],
+        [D + 300 + KW * BEAT + 7700, () => { addC("p-charge"); line(1); }],          // "Built in-house. Tracked at every step."
+        [D + 300 + KW * BEAT + 8900, () => { addC("p-brand"); SFX.shimmer(); }],
+        [D + 300 + KW * BEAT + 9600, () => { addC("p-lines"); line(2); }],           // "Every call answered. Every battery tracked."
+        [D + 300 + KW * BEAT + 12200, () => { addC("p-close"); line(3); }],          // "Our quality. Our commitment. Our future."
+        [D + 300 + KW * BEAT + 15800, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
+        [D + 300 + KW * BEAT + 16800, finish]
       ];
       T.forEach(([ms, fn]) => at(ms, fn));
     }
@@ -2261,7 +2299,7 @@
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
       Voice.stop(); SFX.music(0.055);
-      box.classList.add("p-card-out", "p-dive", "d-impact", "p-exit", "fast");
+      box.classList.add("p-card-out", "k-out", "b-snap", "d-impact", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
     }
@@ -2282,6 +2320,101 @@
     /* ---------- CINEMATIC OUTRO: full charge → logo from particles → taglines → the eye closes ---------- */
     let oTimers = [];
     api.outroOn = false; api.outroEnd = false;
+
+    /* India energy map (canvas): dots form the map, light arcs fly out from the hub, then everything gathers into one point */
+    const INDIA = [[74.0,34.5],[74.8,37.0],[77.8,35.6],[78.9,34.3],[79.4,32.6],[78.8,31.1],[80.3,30.2],[81.1,28.9],[84.0,27.4],[86.0,26.6],[88.1,26.5],[88.2,27.9],[88.9,27.3],[89.8,26.8],[92.0,26.9],[94.5,28.0],[95.6,29.2],[97.4,28.2],[96.2,27.1],[95.2,26.5],[94.6,25.2],[94.1,23.8],[93.3,22.0],[92.6,22.1],[92.3,23.6],[91.7,22.9],[91.3,24.0],[92.0,25.1],[90.0,25.2],[89.8,25.9],[89.0,25.3],[88.4,24.4],[88.7,23.2],[88.9,21.6],[87.0,21.5],[86.5,20.2],[85.0,19.3],[84.0,18.2],[82.3,16.6],[81.2,15.9],[80.3,15.2],[80.2,13.5],[79.8,11.5],[79.8,10.3],[78.2,8.9],[77.5,8.1],[76.6,8.9],[76.0,10.3],[75.4,11.8],[74.7,13.0],[74.1,14.8],[73.4,16.5],[72.8,19.0],[72.6,21.0],[72.2,21.9],[70.9,20.8],[69.0,22.3],[68.4,23.6],[70.0,24.2],[71.0,24.4],[70.4,25.7],[69.6,27.0],[70.3,27.9],[72.5,29.0],[73.4,29.9],[74.0,30.9],[74.6,31.9],[74.9,32.5],[74.0,33.0]];
+    function inPoly(x, y, poly) {
+      let c = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const [xi, yi] = poly[i], [xj, yj] = poly[j];
+        if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
+      }
+      return c;
+    }
+    function runMap(cv) {
+      const M = (C.outro && C.outro.map) || {};
+      const hub = M.hub || [76.6, 28.9];
+      const targets = M.targets || [];
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const W = cv.clientWidth, H = cv.clientHeight;
+      cv.width = W * dpr; cv.height = H * dpr;
+      const g = cv.getContext("2d"); g.scale(dpr, dpr);
+      const k = 0.92, lon0 = 68, lon1 = 97.6, lat0 = 6.5, lat1 = 37.3;
+      const mh = H * 0.74, mw = mh * ((lon1 - lon0) * k) / (lat1 - lat0);
+      const ox = W * 0.5 - mw / 2, oy = H * 0.47 - mh / 2;
+      const P = (lon, lat) => [ox + ((lon - lon0) / (lon1 - lon0)) * mw, oy + ((lat1 - lat) / (lat1 - lat0)) * mh];
+      const css = getComputedStyle(document.documentElement);
+      const rgb = css.getPropertyValue("--accent-rgb").trim() || "238,90,36";
+      const rgbL = css.getPropertyValue("--accent-light-rgb").trim() || "255,164,119";
+      const dots = [], step = 0.52;
+      for (let la = lat0; la <= lat1; la += step) for (let lo = lon0; lo <= lon1; lo += step / k) {
+        if (!inPoly(lo, la, INDIA)) continue;
+        const [x, y] = P(lo, la), a = Math.random() * Math.PI * 2, r = Math.max(W, H) * (0.5 + Math.random() * 0.6);
+        dots.push({ x, y, sx: W / 2 + Math.cos(a) * r, sy: H / 2 + Math.sin(a) * r, d: Math.random() * 0.6, tw: Math.random() * Math.PI * 2 });
+      }
+      const H0 = P(hub[0], hub[1]);
+      const arcs = targets.map((t, i) => {
+        const B = P(t[0], t[1]), mx = (H0[0] + B[0]) / 2, my = (H0[1] + B[1]) / 2, dist = Math.hypot(B[0] - H0[0], B[1] - H0[1]);
+        return { B, c: [mx, my - dist * 0.38], d: i * 0.12 };
+      });
+      const qp = (a, t) => {
+        const u = 1 - t;
+        return [u * u * H0[0] + 2 * u * t * a.c[0] + t * t * a.B[0], u * u * H0[1] + 2 * u * t * a.c[1] + t * t * a.B[1]];
+      };
+      const ease = (t) => (t < 0 ? 0 : t > 1 ? 1 : t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const T0 = performance.now(), CX = W / 2, CY = H * 0.42;
+      const TA = 2.4, TB = 2.6, TBdur = 3.6, TC = 6.6, TCdur = 1.3;
+      const frame = (now) => {
+        if (!api.outroOn || !cv.isConnected) return;
+        const t = (now - T0) / 1000;
+        g.clearRect(0, 0, W, H);
+        const gather = ease((t - TC) / TCdur);
+        // map dots
+        for (const p of dots) {
+          const e = ease((t - p.d) / TA);
+          let x = p.sx + (p.x - p.sx) * e, y = p.sy + (p.y - p.sy) * e;
+          if (gather > 0) { x += (CX - x) * gather; y += (CY - y) * gather; }
+          const tw = 0.55 + 0.45 * Math.sin(t * 2 + p.tw);
+          g.globalAlpha = Math.min(1, e * 1.4) * (0.35 + 0.35 * tw) * (1 - gather * 0.6);
+          g.fillStyle = `rgb(${rgbL})`;
+          g.beginPath(); g.arc(x, y, 1.6, 0, 6.283); g.fill();
+        }
+        // arcs + travelling pulses
+        if (t > TB && gather < 1) {
+          g.globalCompositeOperation = "lighter";
+          arcs.forEach((a) => {
+            const pr = ease((t - TB - a.d) / 1.1);
+            if (pr <= 0) return;
+            g.globalAlpha = 0.75 * (1 - gather);
+            g.strokeStyle = `rgba(${rgb},.9)`; g.lineWidth = 1.6; g.shadowBlur = 12; g.shadowColor = `rgb(${rgb})`;
+            g.beginPath();
+            for (let s2 = 0; s2 <= pr; s2 += 0.02) { const [x, y] = qp(a, s2); s2 === 0 ? g.moveTo(x, y) : g.lineTo(x, y); }
+            g.stroke();
+            if (pr >= 1) {
+              const ph = ((t - TB - a.d) * 0.55) % 1, [px, py] = qp(a, ph);
+              g.fillStyle = "#fff"; g.beginPath(); g.arc(px, py, 2.6, 0, 6.283); g.fill();
+              const pulse = 4 + 3 * Math.sin(t * 4 + a.d * 10);
+              g.fillStyle = `rgba(${rgbL},.9)`; g.beginPath(); g.arc(a.B[0], a.B[1], pulse, 0, 6.283); g.fill();
+            }
+          });
+          g.shadowBlur = 0;
+          g.globalCompositeOperation = "source-over";
+        }
+        // hub
+        if (t > TB - 0.4) {
+          const hp = Math.min(1, (t - TB + 0.4) / 0.6), hx = H0[0] + (CX - H0[0]) * gather, hy = H0[1] + (CY - H0[1]) * gather;
+          const rr = 7 + 3 * Math.sin(t * 3) + gather * 30;
+          const grd = g.createRadialGradient(hx, hy, 0, hx, hy, rr * 4);
+          grd.addColorStop(0, "rgba(255,255,255,1)"); grd.addColorStop(0.25, `rgba(${rgb},.9)`); grd.addColorStop(1, `rgba(${rgb},0)`);
+          g.globalAlpha = hp; g.fillStyle = grd; g.beginPath(); g.arc(hx, hy, rr * 4, 0, 6.283); g.fill();
+        }
+        g.globalAlpha = 1;
+        if (t < TC + TCdur + 0.6) requestAnimationFrame(frame);
+        else g.clearRect(0, 0, W, H);
+      };
+      requestAnimationFrame(frame);
+      return { hubXY: H0 };
+    }
     function outro() {
       if (api.running || api.outroOn) return;
       api.outroOn = true; api.outroEnd = false;
@@ -2303,18 +2436,12 @@
         <div class="oc-bg"></div>
         <div class="oc-glow"></div>
         <div class="in-sparks">${sparks(30)}</div>
-        <div class="oc-batt">
-          <svg class="oc-ring" viewBox="0 0 340 340"><circle cx="170" cy="170" r="${R}" class="trk"/><circle cx="170" cy="170" r="${R}" class="val" style="stroke-dasharray:${CIRC};stroke-dashoffset:${CIRC}"/></svg>
-          <div class="oc-cell">${batterySVG()}</div>
-          <div class="oc-pct"><b data-k="pct">0</b><em>%</em><span>Charging</span></div>
-        </div>
-        <div class="oc-wave"></div><div class="oc-wave w2"></div>
-        <div class="oc-dots">${dots}</div>
+        <canvas class="oc-map"></canvas>
+        <div class="oc-cap"><span class="dot"></span>${esc((C.outro && C.outro.mapLine) || "")}</div>
         <div class="oc-line"></div>
         <div class="oc-logo">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b>${esc(C.company.shortName)}</b>`}<i class="oc-shine"></i></div>
         <div class="oc-tags">${tag.map((t, i) => `<div class="oc-tag" data-k="t${i}">${words(t, 0)}</div>`).join("")}</div>
         <div class="oc-build"><div class="oc-h">${words(O.headline || "Let's build together.", 0)}</div><div class="oc-chips">${chips}</div></div>
-        ${lxMark()}
         <div class="oc-final">
           ${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="">` : ""}
           <b>${esc(O.thanks || "Thank you.")}</b>
@@ -2324,43 +2451,25 @@
         ${fxLayers()}`;
       box.hidden = false; box.className = "outro";
       document.body.classList.add("outro-zoom");                 // the deck melts into the film
-      box.classList.add("a-atom", "a-tile", "a-word", "a-logo");  // the Li mark waits, hidden, in its logo state
-      sizeMark();
       void box.offsetWidth;
       const oc = (cls) => box.classList.add(cls);
       const off = (cls) => box.classList.remove(cls);
       const oat = (ms, fn) => oTimers.push(setTimeout(fn, ms));
       const say = (n) => { const t = (VO.outro || [])[n]; if (t) Voice.say("outro-" + (n + 1), t, { rate: 0.88 }); };
-      const charge = (ms) => {
-        const pct = box.querySelector('[data-k="pct"]'), ring = box.querySelector(".oc-ring .val"), t0 = performance.now();
-        const tick = (t) => {
-          if (!api.outroOn) return;
-          const p = Math.min(1, (t - t0) / ms), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-          pct.textContent = Math.round(e * 100);
-          ring.style.strokeDashoffset = (CIRC * (1 - e)).toFixed(1);
-          if (p < 1) requestAnimationFrame(tick); else oc("o-full");
-        };
-        requestAnimationFrame(tick);
-      };
       [
-        [30,    () => { oc("o-on"); SFX.whoosh(1.6, true); SFX.musicLevel(0.05, 1.5); }],
-        [700,   () => { oc("o-batt"); SFX.charge(); charge(2600); }],
-        [1900,  () => SFX.riser(1.4)],
-        [3400,  () => { oc("o-wave"); SFX.drop(); }],              // 100% → light wave
-        [3900,  () => { oc("o-dots"); SFX.whoosh(1.0); }],          // particles gather to one point
-        [4800,  () => { oc("o-line"); SFX.shimmer(); }],            // a line of light…
-        [5300,  () => { oc("o-logo"); say(0); }],                   // …opens into the logo
-        [6600,  () => { oc("o-up"); oc("o-t0"); say(1); }],
-        [7400,  () => oc("o-t1")],
-        [8200,  () => oc("o-t2")],
-        [10200, () => { oc("o-build"); say(2); }],
-        [13300, () => { oc("o-li"); SFX.whoosh(1.2); SFX.musicLevel(0.035, 2); }],    // the logo returns…
-        [14400, () => { off("a-logo"); }],                                           // …as "Litpax"
-        [15300, () => { off("a-word"); SFX.whoosh(0.8); }],                          // "tpax" folds back into "Li"
-        [16400, () => { off("a-tile"); SFX.shimmer(); }],                            // the tile opens into the atom
-        [18300, () => { oc("a-end"); SFX.heartbeat(); }],                            // electrons collapse into a point of light
-        [19400, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
-        [20600, () => { api.outroEnd = true; }]
+        [30,    () => { oc("o-on"); SFX.whoosh(1.6, true); SFX.musicLevel(0.05, 1.5); runMap(box.querySelector(".oc-map")); }],
+        [900,   () => SFX.shimmer()],
+        [2600,  () => { oc("o-cap"); SFX.charge(); say(0); }],     // "From Haryana — powering India's electric journey."
+        [5300,  () => SFX.riser(1.4)],
+        [6600,  () => { oc("o-gather"); SFX.whoosh(1.2, true); }], // the whole map gathers into one point
+        [7900,  () => { oc("o-line"); SFX.drop(); }],              // a line of light…
+        [8400,  () => { oc("o-logo"); say(1); }],                  // …opens into the logo
+        [9700,  () => { oc("o-up"); oc("o-t0"); }],
+        [10500, () => oc("o-t1")],
+        [11300, () => oc("o-t2")],
+        [13400, () => { oc("o-build"); say(2); }],
+        [17200, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
+        [18400, () => { api.outroEnd = true; }]
       ].forEach(([ms, fn]) => oat(ms, fn));
     }
     function outroKey() {
