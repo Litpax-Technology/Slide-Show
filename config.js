@@ -284,6 +284,18 @@ window.PITCH_CONFIG = {
   music: "assets/music.mp3",
   musicVolume: 0.35,
 
+  /* Dedication from the MIS team — plays after "Thank you." in the closing film.
+     Set show: false when presenting to clients. */
+  dedication: {
+    show: true,
+    voice: true,
+    lines: [
+      ["You built the company.", "We built the systems to keep up with you."],
+      ["Two people. One vision.", "And a team proud to follow it."]
+    ],
+    sign: "— With respect, Team MIS"
+  },
+
   /* Closing film (plays after the last slide, or press E) */
   outro: {
     headline: "Let's build together.",
