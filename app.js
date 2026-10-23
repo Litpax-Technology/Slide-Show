@@ -1710,7 +1710,22 @@
       music = { out, timer: setInterval(tick, 200) };
       tick();
     };
-    api.musicLevel = (lvl, sec) => { musicLevel = lvl; if (music) music.out.gain.setTargetAtTime(lvl, now(), (sec || 1) / 3); };
+    // level changes also apply to the music file (0.055 = normal level)
+    let fileLvl = 1, fileRaf = null;
+    const rampFile = (target, sec) => {
+      if (!fileMusic) return;
+      cancelAnimationFrame(fileRaf);
+      const from = fileLvl, t0 = performance.now(), ms = (sec || 1) * 1000;
+      const step = (t) => {
+        const p = Math.min(1, (t - t0) / ms);
+        fileLvl = from + (target - from) * p;
+        fileMusic.volume = Math.max(0, Math.min(1, fileVol * fileLvl * (ducked ? 0.3 : 1)));
+        if (p < 1) fileRaf = requestAnimationFrame(step);
+      };
+      fileRaf = requestAnimationFrame(step);
+    };
+    let ducked = false;
+    api.musicLevel = (lvl, sec) => { musicLevel = lvl; if (music) music.out.gain.setTargetAtTime(lvl, now(), (sec || 1) / 3); rampFile(Math.min(1.4, lvl / 0.055), sec); };
     api.riser = (sec) => {
       if (!ac) return;
       sec = sec || 1.6; const t = now(), n = noise(), f = ac.createBiquadFilter(), o = ac.createOscillator();
@@ -1732,7 +1747,8 @@
       if (!ac) return;
       if (pad) pad.out.gain.setTargetAtTime(on ? padLevel * 0.25 : padLevel, ac.currentTime, 0.25);
       if (music) music.out.gain.setTargetAtTime(on ? musicLevel * 0.3 : musicLevel, ac.currentTime, 0.3);
-      if (fileMusic) fileMusic.volume = on ? fileVol * 0.3 : fileVol;
+      ducked = on;
+      if (fileMusic) fileMusic.volume = Math.max(0, Math.min(1, fileVol * fileLvl * (on ? 0.3 : 1)));
     };
     // Optional real music file (config.music) — used instead of the generated track when it exists
     let fileMusic = null, fileVol = 0.35;
@@ -1747,7 +1763,10 @@
     };
     api.music = (level) => {
       if (fileMusic) return;
-      api.useFile(C.music, C.musicVolume).then((ok) => { if (!ok) api.musicStart(level); });
+      api.useFile(C.music, C.musicVolume).then((ok) => {
+        if (!ok) return api.musicStart(level);
+        fileLvl = 0; fileMusic.volume = 0; rampFile(Math.min(1.4, (level || 0.055) / 0.055), 4);   // fade the track in
+      });
     };
     // ambient background pad (A minor 9), very quiet, slowly breathing
     api.padStart = (level) => {
