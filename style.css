@@ -1929,3 +1929,76 @@ h2 { letter-spacing: -.035em; }
 /* title slide: decorative rings */
 .s-title .slide-inner::before { content: ""; position: absolute; right: -180px; top: -160px; width: 620px; height: 620px; border-radius: 50%; border: 1px solid rgba(var(--accent-rgb), .12); box-shadow: 0 0 0 60px rgba(var(--accent-rgb), .025), 0 0 0 140px rgba(var(--accent-rgb), .018); pointer-events: none; }
 .s-title h1 { font-size: 78px; }
+
+/* =========================================================
+   "Li" MARK — lithium atom → periodic tile → Litpax (intro + outro)
+   ========================================================= */
+.lx { position: absolute; left: 50%; top: 47%; width: 0; height: 0; z-index: 6; pointer-events: none;
+  transition: transform 1.3s cubic-bezier(.7,0,.85,.2), opacity .6s ease .7s; }
+.lx > * { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
+#intro.a-atom .in-pulse { opacity: 0; transition: opacity .6s; }
+
+/* atom */
+.lx-atom { width: 64vh; height: 64vh; overflow: visible; opacity: 0; transform: translate(-50%, -50%) scale(.55) rotate(-25deg);
+  transition: opacity 1s ease, transform 1.6s cubic-bezier(.16,1,.3,1); }
+.lx-orb { fill: none; stroke: rgba(var(--accent-light-rgb), .55); stroke-width: 1.6; stroke-dasharray: 820; stroke-dashoffset: 820;
+  transition: stroke-dashoffset 1.6s cubic-bezier(.65,0,.35,1); filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), .7)); }
+.lx-e { fill: #fff; filter: drop-shadow(0 0 6px var(--accent-light)) drop-shadow(0 0 14px var(--accent)); }
+.lx-nuc { filter: drop-shadow(0 0 18px var(--accent)); transform-origin: 0 0; animation: nuc 1.6s ease-in-out infinite; }
+@keyframes nuc { 50% { transform: scale(1.12); } }
+.lx-halo { fill: rgba(var(--accent-rgb), .18); filter: blur(18px); }
+#intro.a-atom .lx-atom { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+#intro.a-atom .lx-orb { stroke-dashoffset: 0; }
+#intro.a-atom g:nth-of-type(2) .lx-orb { transition-delay: .15s; }
+#intro.a-atom g:nth-of-type(3) .lx-orb { transition-delay: .3s; }
+#intro.a-tile .lx-atom { opacity: 0; transform: translate(-50%, -50%) scale(.12) rotate(140deg);
+  transition: transform 1s cubic-bezier(.7,0,.3,1), opacity .45s ease .5s; }
+
+/* flash when the atom collapses */
+.lx-flash { width: 40vh; height: 40vh; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, #fff 0%, rgba(var(--accent-light-rgb), .8) 18%, rgba(var(--accent-rgb), .25) 45%, transparent 70%); }
+#intro.a-tile .lx-flash { animation: lxflash 1.2s ease-out .55s both; }
+#intro.a-end .lx-flash { animation: lxflash 1.6s ease-out .9s both; }
+@keyframes lxflash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); } }
+
+/* periodic-table tile */
+.lx-frame { width: 31vh; height: 31vh; border-radius: 2.6vh; opacity: 0; transform: translate(-50%, -50%) scale(.5);
+  border: 2px solid rgba(var(--accent-light-rgb), .65);
+  background: linear-gradient(150deg, rgba(var(--accent-rgb), .28), rgba(255,255,255,.03) 60%);
+  box-shadow: 0 0 7vh rgba(var(--accent-rgb), .35), inset 0 0 4vh rgba(var(--accent-rgb), .18);
+  backdrop-filter: blur(4px);
+  transition: opacity .7s ease, transform 1s cubic-bezier(.16,1,.3,1); }
+.lx-frame span { position: absolute; color: rgba(255,255,255,.75); font-weight: 700; }
+.lx-frame .n { left: 2.2vh; top: 1.8vh; font-size: 2.6vh; color: #fff; }
+.lx-frame .w { right: 2.2vh; top: 2.1vh; font-size: 1.7vh; }
+.lx-frame .nm { left: 0; right: 0; bottom: 2.2vh; text-align: center; font-size: 2vh; letter-spacing: .28em; text-transform: uppercase; }
+#intro.a-tile .lx-frame { opacity: 1; transform: translate(-50%, -50%) scale(1); transition-delay: .45s; }
+#intro.a-word .lx-frame { opacity: 0; transform: translate(-50%, -50%) scale(1.6); transition: opacity .6s ease, transform 1s cubic-bezier(.65,0,.35,1); transition-delay: 0s; }
+
+/* Li → Litpax */
+.lx-text { display: flex; align-items: baseline; white-space: nowrap; font-size: 15vh; font-weight: 800; letter-spacing: -.045em; line-height: 1; color: #fff;
+  opacity: 0; filter: blur(8px); transition: opacity .7s ease, filter .7s ease, transform 1s cubic-bezier(.16,1,.3,1); transform: translate(-50%, -54%) scale(.92); }
+.lx-text b { font-weight: 800; }
+.lx-text .rest { display: inline-block; overflow: hidden; max-width: 0; vertical-align: baseline; transition: max-width 1.1s cubic-bezier(.65,0,.35,1); }
+.lx-text .rest > span { display: inline-block; }
+.lx-text em { font-style: normal; background: linear-gradient(110deg, var(--accent), var(--iris-warm)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#intro.a-tile .lx-text { opacity: 1; filter: none; transform: translate(-50%, -54%) scale(.8); transition-delay: .55s; }
+#intro.a-word .lx-text { transform: translate(-50%, -54%) scale(1); transition-delay: 0s; }
+#intro.a-word .lx-text .rest { max-width: var(--rw, 2.4em); }
+#intro.a-logo .lx-text { opacity: 0; filter: blur(6px); transition: opacity .8s ease, filter .8s ease; transition-delay: 0s; }
+.lx-img { height: 13.5vh; width: auto; opacity: 0; filter: blur(8px); transition: opacity .9s ease, filter .9s ease; }
+#intro.a-logo .lx-img { opacity: 1; filter: none; }
+
+/* intro: zoom straight through the logo into the battery scene */
+#intro.p-dive .lx { transform: scale(6); opacity: 0; }
+
+/* outro: the mark is hidden until o-li, then it plays in reverse */
+#intro.outro .lx { opacity: 0; transition: opacity 1s ease; }
+#intro.outro.o-li .lx { opacity: 1; }
+#intro.o-li .oc-build { opacity: 0; filter: blur(10px); transition: opacity .9s ease, filter .9s ease; }
+#intro.a-end .lx-atom { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(220deg); transition: transform 1.4s cubic-bezier(.7,0,.3,1), opacity .5s ease .9s; }
+#intro.o-final .lx { opacity: 0; }
+/* cleaner hand-off between typed "Litpax" and the real logo */
+.lx-img { height: auto; transform: translate(-50%, -54%); transition: opacity .7s ease .35s, filter .7s ease .35s; }
+#intro.a-logo .lx-text { transition: opacity .45s ease, filter .45s ease; }
+#intro.outro .lx-text { transition-delay: .25s; }
