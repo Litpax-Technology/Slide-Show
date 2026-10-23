@@ -2371,3 +2371,7 @@ h2 { letter-spacing: -.035em; }
   opacity: 0; transform: translateY(1vh); transition: opacity 1.4s ease, transform 1.4s ease; }
 #intro.o-sig .oc-ded .sig { opacity: 1; transform: none; }
 #intro.o-sig .oc-ded .sig::before { content: ""; display: block; width: 6vh; height: 1px; margin: 0 auto 1.6vh; background: linear-gradient(90deg, transparent, var(--accent-light), transparent); }
+/* "press any key" hint only appears once the closing has fully finished */
+.oc-final em { opacity: 0 !important; transition: opacity 1s ease; }
+#intro.o-endhint .oc-final em, #intro.o-endhint .oc-ded-hint { opacity: 1 !important; }
+.oc-ded-hint { position: absolute; left: 0; right: 0; bottom: 14vh; text-align: center; font-size: 1.3vh; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.28); opacity: 0; transition: opacity 1s ease; z-index: 6; }
