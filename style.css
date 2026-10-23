@@ -2375,3 +2375,126 @@ h2 { letter-spacing: -.035em; }
 .oc-final em { opacity: 0 !important; transition: opacity 1s ease; }
 #intro.o-endhint .oc-final em, #intro.o-endhint .oc-ded-hint { opacity: 1 !important; }
 .oc-ded-hint { position: absolute; left: 0; right: 0; bottom: 14vh; text-align: center; font-size: 1.3vh; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: rgba(255,255,255,.28); opacity: 0; transition: opacity 1s ease; z-index: 6; }
+
+/* =========================================================
+   INTRO v7 — premium product film (after the typing words)
+   ========================================================= */
+.stg, .eb { display: none !important; }
+.pf { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; z-index: 4; pointer-events: none; overflow: hidden;
+  transform: translate(-50%, -50%) scale(var(--cover, 1.5)); background: #000; opacity: 0; transition: opacity 1.2s ease; }
+#intro.k-out .pf { opacity: 1; }
+
+/* 1. a thin line of light, which opens into the studio */
+.pf-line { position: absolute; left: 50%; top: 520px; width: 0; height: 1px; transform: translateX(-50%); opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,244,228,.95), transparent); box-shadow: 0 0 18px rgba(255,236,210,.7);
+  transition: width 1.6s cubic-bezier(.65,0,.35,1), opacity .6s ease; }
+#intro.f-line .pf-line { width: 980px; opacity: 1; }
+#intro.f-open .pf-line { opacity: .35; transition: opacity 2s ease; }
+.pf-spot { position: absolute; left: 50%; top: -60px; width: 760px; height: 640px; margin-left: -380px; opacity: 0;
+  background: radial-gradient(ellipse 50% 70% at 50% 0%, rgba(255,240,222,.16), transparent 70%);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); filter: blur(6px); transition: opacity 2.4s ease; }
+.pf-floor { position: absolute; left: 0; right: 0; top: 520px; bottom: 0; opacity: 0; transition: opacity 2.4s ease;
+  background: radial-gradient(ellipse 34% 40% at 50% 0%, rgba(255,236,214,.12), transparent 70%), linear-gradient(180deg, #0d0d10, #050506 60%); }
+#intro.f-open .pf-spot, #intro.f-open .pf-floor { opacity: 1; }
+.pf-dust { position: absolute; left: 30%; right: 30%; top: 0; bottom: 200px; opacity: 0; transition: opacity 3s ease; }
+.pf-dust i { background: rgba(255,238,215,.85) !important; box-shadow: 0 0 6px rgba(255,238,215,.6) !important; animation-duration: calc(var(--du) * 2.6) !important; }
+#intro.f-open .pf-dust { opacity: .45; }
+
+/* 2. the battery: a real 3D box turning slowly on a mirror floor */
+.pf-world { position: absolute; left: 50%; top: 330px; width: 0; height: 0; perspective: 1400px; perspective-origin: 50% 20%;
+  transition: left 2.2s cubic-bezier(.65,0,.35,1), opacity 1.2s ease, filter 1.2s ease; }
+.pf-cam { position: absolute; left: 0; top: 0; transform-style: preserve-3d; transform: scale(.94); }
+#intro.f-batt .pf-cam { animation: dolly 14s cubic-bezier(.25,.1,.2,1) forwards; }
+@keyframes dolly { to { transform: scale(1.08); } }
+.pf-box { position: absolute; left: -150px; top: -190px; width: 300px; height: 380px; transform-style: preserve-3d;
+  transform: rotateX(-9deg) rotateY(-210deg); opacity: 0; filter: brightness(.2); transition: opacity 2s ease, filter 3s ease; }
+#intro.f-batt .pf-box { opacity: 1; filter: brightness(1); animation: turn 10.5s cubic-bezier(.3,.08,.2,1) forwards; }
+@keyframes turn { from { transform: rotateX(-9deg) rotateY(-210deg); } to { transform: rotateX(-9deg) rotateY(-22deg); } }
+.pf-face { position: absolute; left: 0; top: 0; width: 300px; height: 380px; overflow: hidden; backface-visibility: hidden;
+  background: linear-gradient(160deg, #24262c 0%, #15171b 45%, #0b0c0e 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
+.f-front { transform: translateZ(100px); }
+.f-back { transform: rotateY(180deg) translateZ(100px); }
+.f-right { width: 200px; left: 50px; transform: rotateY(90deg) translateZ(150px); background: linear-gradient(160deg, #1c1e23, #0c0d10); }
+.f-left { width: 200px; left: 50px; transform: rotateY(-90deg) translateZ(150px); background: linear-gradient(200deg, #1c1e23, #0c0d10); }
+.f-top { height: 200px; top: 90px; transform: rotateX(90deg) translateZ(190px); background: linear-gradient(180deg, #34373e, #22252a); }
+.f-bottom { height: 200px; top: 90px; transform: rotateX(-90deg) translateZ(190px); background: #070708; }
+.pf-face .rib { position: absolute; inset: 30px 24px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 2px, transparent 2px 18px); border-radius: 6px; }
+.f-top .handle { position: absolute; left: 70px; right: 70px; top: 86px; height: 22px; border-radius: 11px; background: linear-gradient(#0d0e10, #1b1d21); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+.f-top .term { position: absolute; top: 30px; width: 34px; height: 34px; border-radius: 50%; box-shadow: inset 0 -4px 6px rgba(0,0,0,.5); }
+.f-top .term.pos { left: 46px; background: radial-gradient(circle at 40% 35%, #ff6b5e, #a3241b); }
+.f-top .term.neg { right: 46px; background: radial-gradient(circle at 40% 35%, #555, #111); }
+/* specular sheen that travels across each face as it turns */
+.pf-face .sheen { position: absolute; top: -20%; bottom: -20%; left: -60%; width: 40%; transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent); }
+#intro.f-batt .pf-face .sheen { animation: sheen 3.6s ease-in-out 1.2s infinite; }
+@keyframes sheen { 0% { left: -60%; } 60%, 100% { left: 130%; } }
+/* the label */
+.lbl { position: absolute; left: 26px; right: 26px; top: 64px; bottom: 44px; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(160deg, var(--night-2), #07080b); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.lbl-swoosh { position: absolute; left: -30%; right: -30%; bottom: -10%; height: 70%; transform: rotate(-28deg); transform-origin: 50% 100%;
+  background: linear-gradient(90deg, transparent 10%, rgba(var(--accent-rgb), .9) 45%, var(--iris-warm) 70%, transparent 95%); opacity: .7; filter: blur(2px); }
+.lbl-logo { position: absolute; left: 20px; top: 20px; width: 150px; height: auto; transition: filter 1s ease; }
+.lbl-t1 { position: absolute; left: 20px; top: 74px; font: 800 19px "Plus Jakarta Sans", sans-serif; letter-spacing: .08em; color: #fff; }
+.lbl-t2 { position: absolute; left: 20px; top: 100px; font: 700 10px "Plus Jakarta Sans", sans-serif; letter-spacing: .16em; color: rgba(255,255,255,.6); }
+.lbl-v { position: absolute; right: 18px; top: 140px; width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center;
+  font: 800 17px "Plus Jakarta Sans", sans-serif; color: #fff; background: var(--accent); box-shadow: 0 0 0 3px rgba(255,255,255,.65); }
+.lbl-seg { position: absolute; left: 20px; bottom: 22px; display: flex; gap: 6px; }
+.lbl-seg i { width: 18px; height: 12px; border-radius: 3px; background: rgba(255,255,255,.14); }
+#intro.f-front .lbl-seg i { animation: btseg 2.4s ease-in-out infinite; }
+#intro.f-front .lbl-seg i:nth-child(2) { animation-delay: .3s; } #intro.f-front .lbl-seg i:nth-child(3) { animation-delay: .6s; }
+#intro.f-front .lbl-seg i:nth-child(4) { animation-delay: .9s; } #intro.f-front .lbl-seg i:nth-child(5) { animation-delay: 1.2s; }
+#intro.f-front .f-front .lbl-logo { filter: drop-shadow(0 0 10px rgba(var(--accent-rgb), .95)) drop-shadow(0 0 24px rgba(var(--accent-rgb), .6)); }
+/* the mirror */
+.pf-mirror { position: absolute; left: 0; top: 0; transform-style: preserve-3d; transform: translateY(388px) scaleY(-1); opacity: .2; filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(0deg, rgba(0,0,0,.9) 0%, transparent 38%); mask-image: linear-gradient(0deg, rgba(0,0,0,.9) 0%, transparent 38%); }
+/* rim glow behind the pack */
+.pf-world::before { content: ""; position: absolute; left: -260px; top: -260px; width: 520px; height: 520px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), .16), transparent 62%); opacity: 0; transition: opacity 3s ease; }
+#intro.f-batt .pf-world::before { opacity: 1; }
+/* the pack moves right to make room for the words, and back to centre for the logo */
+#intro.f-c0 .pf-world { left: 66%; }
+#intro.f-copyout .pf-world { left: 50%; }
+#intro.f-end .pf-world { opacity: 0; filter: blur(10px); }
+
+/* 3. calm lines with a focus pull */
+.pf-copy { position: absolute; left: 110px; top: 250px; display: flex; flex-direction: column; gap: 18px; }
+.pf-copy p { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -.02em; color: #fff; line-height: 1.2;
+  opacity: 0; filter: blur(10px); transform: translateY(10px); transition: opacity 1.6s ease, filter 1.8s ease, transform 2s cubic-bezier(.16,1,.3,1); }
+.pf-copy p em { font-style: normal; color: rgba(255,255,255,.5); }
+#intro.f-c0 [data-k="c0"], #intro.f-c1 [data-k="c1"], #intro.f-c2 [data-k="c2"] { opacity: 1; filter: none; transform: none; }
+#intro.f-c1 [data-k="c0"], #intro.f-c2 [data-k="c1"] { opacity: .45; }
+#intro.f-c2 [data-k="c0"] { opacity: .3; }
+#intro.f-copyout .pf-copy p { opacity: 0 !important; filter: blur(8px); transition: opacity 1s ease, filter 1s ease; }
+
+/* 4. anamorphic lens flare when the X lights up */
+.pf-flare { position: absolute; left: 0; right: 0; top: 268px; height: 2px; opacity: 0; transform: scaleX(.2);
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-light-rgb), .9) 35%, #fff 50%, rgba(var(--accent-light-rgb), .9) 65%, transparent);
+  box-shadow: 0 0 14px 3px rgba(var(--accent-rgb), .55); }
+#intro.f-front .pf-flare { animation: aflare 2.2s ease-out forwards; }
+@keyframes aflare { 0% { opacity: 0; transform: scaleX(.2); } 18% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(1.15); } }
+
+/* 5. the logo */
+.pf-end { position: absolute; left: 0; right: 0; top: 300px; display: flex; flex-direction: column; align-items: center; gap: 22px; opacity: 0; transition: opacity 1.6s ease .3s; }
+.pf-logo { position: relative; overflow: hidden; padding: 6px 10px; }
+.pf-logo img { height: 92px; width: auto; display: block; filter: drop-shadow(0 0 22px rgba(var(--accent-rgb), .4)); }
+.pf-end p { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: .04em; color: rgba(255,255,255,.72); opacity: 0; transform: translateY(8px); transition: opacity 1.6s ease 1.2s, transform 1.8s cubic-bezier(.16,1,.3,1) 1.2s; }
+#intro.f-end .pf-end { opacity: 1; }
+#intro.f-end .pf-end p { opacity: 1; transform: none; }
+#intro.f-end .pf-logo .oc-shine { animation: sweep2 1.6s ease-out 1s forwards; }
+/* gentle exit */
+#intro.p-exit .pf { transform: translate(-50%, -50%) scale(calc(var(--cover, 1.5) * 1.04)); transition: transform 1.2s ease; }
+/* keep the box truly 3D: no filter on the preserve-3d element (it would flatten it) */
+.pf-box, #intro.f-batt .pf-box { filter: none !important; }
+.pf-face { filter: brightness(.22); transition: filter 3.2s ease; }
+#intro.f-batt .pf-face { filter: brightness(1); }
+.f-right, .f-left { filter: brightness(.18); }
+#intro.f-batt .f-right, #intro.f-batt .f-left { filter: brightness(.85); }
+/* fade the pack in on the perspective wrapper — opacity/filter on the 3D box itself would flatten it */
+.pf-box, #intro.f-batt .pf-box { opacity: 1 !important; transition: none; }
+.pf-face, #intro.f-batt .pf-face, .f-right, .f-left, #intro.f-batt .f-right, #intro.f-batt .f-left { filter: none !important; }
+.pf-face::after { content: ""; position: absolute; inset: 0; background: #000; opacity: .8; transition: opacity 3.2s ease; pointer-events: none; }
+#intro.f-batt .pf-face::after { opacity: 0; }
+#intro.f-batt .f-right::after, #intro.f-batt .f-left::after { opacity: .18; }
+.pf-world { opacity: 0; transition: left 2.2s cubic-bezier(.65,0,.35,1), opacity 2s ease, filter 1.2s ease; }
+#intro.f-batt .pf-world { opacity: 1; }
+#intro.f-end .pf-world { opacity: 0; }
