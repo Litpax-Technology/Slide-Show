@@ -63,8 +63,8 @@ window.PITCH_CONFIG = {
       "Let's build together."
     ],
     intro: [
-      "Every great product begins... with how you see it.",
-      "At Litpax... we see every battery.",
+      "Every great battery begins... with one element.",
+      "Lithium. The heart of every Litpax pack.",
       "Every step. Every customer.",
       "Every call answered. Every battery tracked.",
       "Our quality. Our commitment. Our future."
