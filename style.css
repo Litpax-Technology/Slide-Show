@@ -2286,3 +2286,36 @@ h2 { letter-spacing: -.035em; }
 .wk-fig .nk { stroke-width: 10; }
 .wk-fig .wk-body > path:not([class]) { stroke: #050506; stroke-width: 6; stroke-linejoin: round; }
 .wk-fig ellipse { stroke: #050506; stroke-width: 2; }
+
+/* ---------- stage v2: slower walk + light-sweep morph into the real logo ---------- */
+.wk { transition: left 4.6s cubic-bezier(.3,.05,.3,1); }
+#intro.s-walk:not(.s-join) .wk-thigh, #intro.s-walk:not(.s-join) .wk-thigh .wk-shin { animation-duration: .92s; }
+#intro.s-walk:not(.s-join) .wk-thigh.b, #intro.s-walk:not(.s-join) .wk-thigh.b .wk-shin { animation-delay: -.46s; }
+#intro.s-walk:not(.s-join) .wk-body { animation-duration: .46s; }
+#intro.s-walk:not(.s-join) .wk-sign { animation-duration: .46s; }
+
+.st-mark { position: absolute; left: 50%; bottom: 58vh; transform: translateX(-50%); }
+.st-mark .st-word { position: relative; left: auto; bottom: auto; transform: none; }
+.st-mark .st-logo { position: absolute; left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); opacity: 0; filter: none; transition: none;
+  clip-path: inset(-20% 100% -20% 0); }
+/* keep the joined word visible until the sweep removes it */
+#intro.s-logo .st-mark .st-word { opacity: 1; filter: none; }
+#intro.s-logo .st-mark .st-logo { opacity: 1; transform: translate(-50%, -50%); filter: none; }
+#intro.s-morph .st-mark .st-word { animation: wipeOut 1.15s cubic-bezier(.65,0,.35,1) forwards; }
+#intro.s-morph .st-mark .st-logo { animation: wipeIn 1.15s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes wipeOut { from { clip-path: inset(-20% 0 -20% 0); } to { clip-path: inset(-20% 0 -20% 100%); } }
+@keyframes wipeIn { from { clip-path: inset(-20% 100% -20% 0); } to { clip-path: inset(-20% 0 -20% 0); } }
+.st-sweep { position: absolute; top: -30%; bottom: -30%; left: 0; width: 3px; margin-left: -1.5px; opacity: 0; border-radius: 3px;
+  background: linear-gradient(180deg, transparent, #fff 25%, #fff 75%, transparent);
+  box-shadow: 0 0 14px 4px rgba(255,255,255,.85), 0 0 50px 16px rgba(var(--accent-rgb), .6); }
+#intro.s-morph .st-sweep { animation: sweepBar 1.15s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes sweepBar { 0% { left: 0; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+.st-sparks { position: absolute; inset: 0; pointer-events: none; }
+.st-sparks b { position: absolute; left: 0; top: var(--y); width: 4px; height: 4px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px var(--accent-light); opacity: 0; }
+#intro.s-morph .st-sparks b { animation: spk 1.15s cubic-bezier(.65,0,.35,1) var(--d) forwards; }
+@keyframes spk { 0% { left: 0; opacity: 0; transform: none; } 15% { opacity: 1; } 100% { left: 100%; opacity: 0; transform: translate(var(--dx), var(--dy)); } }
+/* settle: glow pulse on the finished logo */
+#intro.s-done .st-mark .st-logo { animation: wipeIn 0s forwards, logoPulse 1.4s ease-out forwards; }
+@keyframes logoPulse { 0% { filter: drop-shadow(0 0 0 rgba(var(--accent-rgb), 0)); transform: translate(-50%, -50%) scale(1); }
+  30% { filter: drop-shadow(0 0 4vh rgba(var(--accent-rgb), .9)); transform: translate(-50%, -50%) scale(1.05); }
+  100% { filter: drop-shadow(0 0 2.5vh rgba(var(--accent-rgb), .5)); transform: translate(-50%, -50%) scale(1); } }
