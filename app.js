@@ -2111,6 +2111,40 @@
     const sparks = (n) => Array.from({ length: n }, (_, i) =>
       `<i style="left:${(i * 37) % 100}%;--dl:${((i * 0.29) % 3).toFixed(2)}s;--du:${(3 + (i % 5) * 0.6).toFixed(1)}s;--sz:${2 + (i % 3)}px"></i>`).join("");
 
+    // Lithium atom → "Li" periodic tile → "Litpax" wordmark → real logo
+    function lxMark() {
+      const orbit = (rot, dur, beg) => `
+        <g transform="rotate(${rot})">
+          <ellipse class="lx-orb" rx="170" ry="60"/>
+          <circle class="lx-e" r="8"><animateMotion dur="${dur}s" begin="${beg}s" repeatCount="indefinite" path="M-170,0 a170,60 0 1,0 340,0 a170,60 0 1,0 -340,0"/></circle>
+        </g>`;
+      return `
+        <div class="lx">
+          <div class="lx-flash"></div>
+          <svg class="lx-atom" viewBox="-210 -210 420 420" aria-hidden="true">
+            <defs><radialGradient id="lxNuc"><stop offset="0" stop-color="#fff"/><stop offset=".35" style="stop-color:var(--accent-light)"/><stop offset="1" style="stop-color:var(--accent)"/></radialGradient></defs>
+            <circle class="lx-halo" r="70"/>
+            ${orbit(0, 2.2, 0)}${orbit(60, 2.7, -.6)}${orbit(120, 3.1, -1.3)}
+            <circle class="lx-nuc" r="26" fill="url(#lxNuc)"/>
+          </svg>
+          <div class="lx-frame"><span class="n">3</span><span class="w">6.94</span><span class="nm">Lithium</span></div>
+          <div class="lx-text"><b>Li</b><span class="rest"><span>tpa<em>x</em></span></span></div>
+          ${C.company.logoWhite ? `<img class="lx-img" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : ""}
+        </div>`;
+    }
+    // measure "tpax" for the slide-out, and size the real logo to exactly match the typed "Litpax"
+    const sizeMark = () => {
+      const r = box.querySelector(".lx .rest"), li = box.querySelector(".lx-text b"), img = box.querySelector(".lx-img");
+      if (!r) return;
+      r.style.setProperty("--rw", r.scrollWidth + 1 + "px");
+      const fit = () => {
+        if (!img || !img.naturalWidth) return;
+        const w = li.offsetWidth + r.scrollWidth;
+        img.style.height = (w / (img.naturalWidth / img.naturalHeight)) + "px";
+      };
+      if (img && !img.complete) img.onload = fit; else fit();
+    };
+
     function build() {
       const lines = (INTRO.lines || []).map((l, i) => `<span class="il" style="--i:${i}">${esc(l)}</span>`).join("");
       const closing = (INTRO.closing || "").split(".").filter((x) => x.trim())
@@ -2133,7 +2167,7 @@
         </div>
         ${assembleScene()}
         <div class="in-pulse"></div>
-        <div class="in-eye">${eyeSVG()}</div>
+        ${lxMark()}
         <div class="in-card"><span>${esc(C.company.name.replace(/ Pvt\. Ltd\.?/i, ""))}</span><em>presents</em></div>
         ${fxLayers()}
         <div class="in-skip">Press any key to skip</div>`;
@@ -2196,18 +2230,14 @@
       const T = [
         [150,   () => { addC("p-card"); SFX.music(0.03); }],
         [2300,  () => addC("p-card-out")],
-        [D + 100,   () => { addC("p-pulse"); SFX.heartbeat(); }],
-        [D + 500,   () => line(0)],                                   // "Every great product begins… with how you see it."
-        [D + 1250,  () => SFX.heartbeat()],
-        [D + 2400,  () => { addC("e-closed"); SFX.heartbeat(); }],
-        [D + 3700,  () => addC("e-peek")],
-        [D + 4150,  () => addC("e-blink")],
-        [D + 4450,  () => { addC("e-open"); SFX.whoosh(0.8); }],
-        [D + 4700,  () => line(1)],                                   // "At Litpax… we see every battery."
-        [D + 5100,  () => addC("e-left")],
-        [D + 5650,  () => addC("e-right")],
-        [D + 6200,  () => addC("e-center")],
-        [D + 6500,  () => { addC("e-dilate"); SFX.shimmer(); }],
+        [D + 100,   () => { addC("p-pulse"); SFX.heartbeat(); sizeMark(); }],
+        [D + 500,   () => line(0)],                                   // "Every great battery begins with one element."
+        [D + 1300,  () => SFX.heartbeat()],
+        [D + 1700,  () => { addC("a-atom"); SFX.whoosh(1.4, true); SFX.shimmer(); }],   // lithium atom forms
+        [D + 4100,  () => { addC("a-tile"); SFX.charge(); SFX.shimmer(); }],            // collapses into the Li tile
+        [D + 4300,  () => line(1)],                                   // "Lithium. The heart of every Litpax pack."
+        [D + 5700,  () => { addC("a-word"); SFX.whoosh(0.8); }],      // "tpax" slides out of "Li"
+        [D + 6600,  () => { addC("a-logo"); SFX.shimmer(); }],        // becomes the real logo
         [D + 7400,  () => { addC("p-dive"); SFX.whoosh(1.6, true); SFX.musicLevel(0.045, 2); }],
         [D + 8000,  () => { addC("as-fly"); setAs("Cells"); SFX.whoosh(1.2); }],
         [D + 8350,  () => SFX.beep()], [D + 8700, () => SFX.beep()], [D + 9050, () => SFX.beep()],
@@ -2284,7 +2314,7 @@
         <div class="oc-logo">${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b>${esc(C.company.shortName)}</b>`}<i class="oc-shine"></i></div>
         <div class="oc-tags">${tag.map((t, i) => `<div class="oc-tag" data-k="t${i}">${words(t, 0)}</div>`).join("")}</div>
         <div class="oc-build"><div class="oc-h">${words(O.headline || "Let's build together.", 0)}</div><div class="oc-chips">${chips}</div></div>
-        <div class="oc-eye">${eyeSVG()}</div>
+        ${lxMark()}
         <div class="oc-final">
           ${C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="">` : ""}
           <b>${esc(O.thanks || "Thank you.")}</b>
@@ -2294,6 +2324,8 @@
         ${fxLayers()}`;
       box.hidden = false; box.className = "outro";
       document.body.classList.add("outro-zoom");                 // the deck melts into the film
+      box.classList.add("a-atom", "a-tile", "a-word", "a-logo");  // the Li mark waits, hidden, in its logo state
+      sizeMark();
       void box.offsetWidth;
       const oc = (cls) => box.classList.add(cls);
       const off = (cls) => box.classList.remove(cls);
@@ -2322,10 +2354,13 @@
         [7400,  () => oc("o-t1")],
         [8200,  () => oc("o-t2")],
         [10200, () => { oc("o-build"); say(2); }],
-        [13400, () => { oc("o-eye"); SFX.musicLevel(0.03, 2); }],
-        [15000, () => { oc("o-shut"); SFX.heartbeat(); }],
-        [17000, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
-        [18200, () => { api.outroEnd = true; }]
+        [13300, () => { oc("o-li"); SFX.whoosh(1.2); SFX.musicLevel(0.035, 2); }],    // the logo returns…
+        [14400, () => { off("a-logo"); }],                                           // …as "Litpax"
+        [15300, () => { off("a-word"); SFX.whoosh(0.8); }],                          // "tpax" folds back into "Li"
+        [16400, () => { off("a-tile"); SFX.shimmer(); }],                            // the tile opens into the atom
+        [18300, () => { oc("a-end"); SFX.heartbeat(); }],                            // electrons collapse into a point of light
+        [19400, () => { oc("o-final"); SFX.shimmer(); SFX.musicLevel(0.02, 3); }],
+        [20600, () => { api.outroEnd = true; }]
       ].forEach(([ms, fn]) => oat(ms, fn));
     }
     function outroKey() {
