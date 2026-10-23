@@ -1612,6 +1612,20 @@
       const hum = ac.createOscillator(); hum.type = "sawtooth"; hum.frequency.value = 100;
       const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 300; hum.connect(lp); lp.connect(gainEnv(t + 0.05, 0.3, 1.6, 0.02)); hum.start(t); hum.stop(t + 2);
     };
+    api.zap = () => {
+      if (!ac) return;
+      const t = now(), n = noise(), f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2400 + Math.random() * 2400; f.Q.value = 4;
+      n.connect(f); f.connect(gainEnv(t, 0.002, 0.05 + Math.random() * 0.05, 0.12 + Math.random() * 0.1)); n.start(t); n.stop(t + 0.12);
+    };
+    api.clank = () => {
+      if (!ac) return;
+      const t = now();
+      [523, 1271, 1987, 2711].forEach((fq, i) => {
+        const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = fq;
+        o.connect(gainEnv(t, 0.002, 0.9 - i * 0.15, 0.16 / (i + 1))); o.start(t); o.stop(t + 1);
+      });
+      api.kick(true);
+    };
     api.step = () => {
       if (!ac) return;
       const t = now(), n = noise(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 500;
@@ -2221,26 +2235,42 @@
             <g class="wk-thigh ${cls}"><path class="lg" d="M58 126 L58 172"/>
               <g class="wk-shin"><path class="sh" d="M58 172 L58 216"/><path class="ft" d="M57 217 L71 219"/></g>
             </g>`;
-      const person = () => `
+      const person = (g) => `
         <svg class="wk-fig" viewBox="0 0 120 240" aria-hidden="true">
           <g class="wk-body">
             ${leg("b")}
             <path class="arm" d="M62 74 L57 44 L67 16"/>
-            <path d="M51 66 Q63 61 71 70 L69 118 Q63 131 52 129 L48 94 Q45 77 51 66 Z"/>
+            ${g === "f"
+              ? `<path d="M52 66 Q63 62 70 70 L66 100 Q65 108 68 120 Q63 131 51 129 Q50 112 53 100 L48 90 Q46 76 52 66 Z"/>`
+              : `<path d="M50 65 Q63 59 73 69 L70 118 Q63 131 51 129 L47 94 Q43 76 50 65 Z"/>`}
             <path class="nk" d="M61 57 L59 67"/>
-            <ellipse cx="64" cy="47" rx="11.5" ry="12.5"/>
+            <g class="wk-head">
+              <ellipse cx="64" cy="47" rx="${g === "f" ? 11 : 11.5}" ry="12.5"/>
+              ${g === "f"
+                ? `<path d="M55 40 Q57 33 66 35 Q60 37 57 43 Z"/><path class="tail" d="M54 46 Q42 50 43 68 Q46 72 49 64 Q50 54 56 51 Z"/>`
+                : `<path d="M54 41 Q57 32 68 34 Q75 36 76 43 Q70 38 62 39 Q57 40 54 41 Z"/>`}
+            </g>
             <path class="arm" d="M57 74 L50 45 L58 16"/>
             ${leg("a")}
           </g>
         </svg>`;
+      const walker = (side, txt, g) => `
+          <div class="wk ${side}">
+            <div class="wk-sign"><span>${txt}</span></div>
+            ${person(g)}
+            <div class="wk-shadow">${person(g)}</div>
+          </div>`;
       const lamps = [18, 38, 62, 82];
       return `
         <div class="stg">
           <div class="st-floor"></div>
           ${lamps.map((x, i) => `<div class="st-light" style="left:${x}%;--i:${i}"><div class="st-beam"></div><div class="st-lamp"></div><div class="st-pool"></div></div>`).join("")}
           <div class="st-dust">${sparks(22)}</div>
-          <div class="wk l"><div class="wk-sign">${left}</div>${person()}</div>
-          <div class="wk r"><div class="wk-sign">${right}</div>${person()}</div>
+          ${walker("l", left, ST.leftFigure || "m")}
+          ${walker("r", right, ST.rightFigure || "f")}
+          <svg class="st-arcs"><path class="arc a1"/><path class="arc a2"/></svg>
+          <div class="st-burst">${Array.from({ length: 26 }, (_, i) => { const a = (i / 26) * 6.283; const r = 120 + (i % 5) * 40; return `<b style="--x:${(Math.cos(a) * r).toFixed(0)}px;--y:${(Math.sin(a) * r * 0.7).toFixed(0)}px"></b>`; }).join("")}</div>
+          <div class="st-tag">${esc(ST.tagline || "Two people. One vision.")}</div>
           <div class="st-mark">
             <div class="st-word"><span class="a">${left}</span><span class="b">${right}</span></div>
             ${C.company.logoWhite ? `<img class="st-logo" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : ""}
@@ -2319,6 +2349,30 @@
 
     const at = (ms, fn) => timers.push(setTimeout(fn, ms));
     const addC = (cls) => box.classList.add(cls);
+    // jagged electric arc between the inner edges of the LIT and PAX signs
+    let arcTimer = null;
+    function arcs(on) {
+      clearInterval(arcTimer);
+      const svgEl = box.querySelector(".st-arcs");
+      if (!svgEl) return;
+      if (!on) { svgEl.classList.remove("on"); return; }
+      svgEl.classList.add("on");
+      const draw = () => {
+        if (!api.running) return clearInterval(arcTimer);
+        const sg = box.querySelectorAll(".wk-sign"), host = svgEl.getBoundingClientRect();
+        if (sg.length < 2) return;
+        const a = sg[0].getBoundingClientRect(), b = sg[1].getBoundingClientRect();
+        const x0 = a.right - host.left - 4, x1 = b.left - host.left + 4, yc = (a.top + a.bottom) / 2 - host.top;
+        svgEl.setAttribute("viewBox", `0 0 ${host.width} ${host.height}`);
+        svgEl.querySelectorAll(".arc").forEach((pth, k) => {
+          let d = `M${x0} ${yc}`, n = 9;
+          for (let i = 1; i < n; i++) d += ` L${x0 + ((x1 - x0) * i) / n} ${yc + (Math.random() - 0.5) * (k ? 34 : 22)}`;
+          pth.setAttribute("d", d + ` L${x1} ${yc}`);
+        });
+        if (Math.random() < 0.55) SFX.zap();
+      };
+      draw(); arcTimer = setInterval(draw, 70);
+    }
     const setAs = (t) => { const el = box.querySelector('[data-k="asl"]'); if (el) el.textContent = t; };
     const line = (n) => { const t = (VO.intro || [])[n]; if (t) Voice.say("intro-" + (n + 1), t, { rate: 0.86, pitch: 0.95 }); };
 
@@ -2375,9 +2429,12 @@
         [S0 + 2140, () => { addC("s-l3"); SFX.clunk(); SFX.musicLevel(0.04, 2); }],
         [S0 + 2600, () => addC("s-walk")],                                               // LIT from the left, PAX from the right (slow)
         ...Array.from({ length: 10 }, (_, i) => [S0 + 2800 + i * 460, () => SFX.step()]),
-        [S0 + 7400, () => { addC("s-join"); SFX.kick(true); }],                          // click — LIT + PAX
+        [S0 + 5900, () => { addC("s-charge"); arcs(true); }],                           // energy arcs between LIT and PAX
+        [S0 + 7400, () => { arcs(false); addC("s-join"); SFX.clank(); }],               // clank — LIT + PAX
         [S0 + 8100, () => { addC("s-logo"); addC("s-morph"); SFX.whoosh(1.1); SFX.shimmer(); }],   // light sweep turns the text into the logo
         [S0 + 9200, () => { addC("s-done"); SFX.drop(); SFX.musicLevel(0.065, 1); }],
+        [S0 + 9700, () => addC("s-nod")],                                                // the two turn to each other and nod
+        [S0 + 10100, () => { addC("s-tag"); Voice.say("stage", (VO.lines || {}).stage || "Two people. One vision.", { rate: 0.86 }); }],
         ...[
           [7800, () => addC("s-out")],
           [8200, () => { addC("b-show"); SFX.shimmer(); }],
@@ -2391,13 +2448,14 @@
           [17800, () => { addC("p-close"); line(3); }],
           [21400, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
           [22400, finish]
-        ].map(([ms, fn]) => [S0 + ms + 3000, fn])                                        // everything after the logo moves later
+        ].map(([ms, fn]) => [S0 + ms + 5000, fn])                                        // everything after the logo moves later
       ];
       T.forEach(([ms, fn]) => at(ms, fn));
     }
     function skip() {
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
+      arcs(false);
       Voice.stop(); SFX.music(0.055);
       box.classList.add("p-card-out", "k-out", "s-out", "b-snap", "d-impact", "p-exit", "fast");
       reveal();
