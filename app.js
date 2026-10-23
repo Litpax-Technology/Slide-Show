@@ -1627,6 +1627,19 @@
       });
       api.kick(true);
     };
+    api.piano = (notes, vol) => {
+      if (!ac) return;
+      const t0 = now();
+      (notes || [220]).forEach((fq, i) => {
+        const t = t0 + i * 0.06;
+        [1, 2, 3].forEach((h, j) => {
+          const o = ac.createOscillator(); o.type = j ? "sine" : "triangle"; o.frequency.value = fq * h;
+          const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime((vol || 0.07) / (h * h), t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2 - j * 0.8);
+          o.connect(g); g.connect(master); o.start(t); o.stop(t + 3.3);
+        });
+      });
+    };
     api.step = () => {
       if (!ac) return;
       const t = now(), n = noise(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 500;
@@ -2228,6 +2241,52 @@
     }
     // Exploded 3D battery — layers separate with labels, then snap together
     // Stage: blackout → spotlights switch on one by one → two silhouettes carry LIT and PAX → join → logo
+    // Premium product film: a line of light opens a studio, the battery turns slowly on a mirror floor,
+    // calm lines appear one by one, the label's X lights up with a lens flare, then the logo.
+    function filmScene() {
+      const F = INTRO.film || {};
+      const lines = F.lines || ["Designed and built in Haryana.", "Every cell. Tracked.", "Every pack. Tested."];
+      const P = C.company.productArt || {};
+      const logo = C.company.logoWhite ? `<img class="lbl-logo" src="${esc(C.company.logoWhite)}" alt="">` : `<b class="lbl-logo">${esc(C.company.shortName)}</b>`;
+      const box = (refl) => `
+        <div class="pf-box${refl ? " refl" : ""}">
+          <div class="pf-face f-front">
+            <div class="lbl">
+              <div class="lbl-swoosh"></div>
+              ${logo}
+              <div class="lbl-t1">LITHIUM ION</div>
+              <div class="lbl-t2">POWER PACK · ${esc(P.cap || "36Ah")}</div>
+              <div class="lbl-v">${esc(P.volt || "74V")}</div>
+              <div class="lbl-seg"><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <i class="sheen"></i>
+          </div>
+          <div class="pf-face f-back"><i class="sheen"></i></div>
+          <div class="pf-face f-right"><i class="rib"></i><i class="sheen"></i></div>
+          <div class="pf-face f-left"><i class="rib"></i><i class="sheen"></i></div>
+          <div class="pf-face f-top"><i class="handle"></i><i class="term pos"></i><i class="term neg"></i></div>
+          <div class="pf-face f-bottom"></div>
+        </div>`;
+      return `
+        <div class="pf">
+          <div class="pf-line"></div>
+          <div class="pf-spot"></div>
+          <div class="pf-floor"></div>
+          <div class="pf-dust">${sparks(26)}</div>
+          <div class="pf-world"><div class="pf-cam">${box(false)}<div class="pf-mirror">${box(true)}</div></div></div>
+          <div class="pf-copy">${lines.map((l, i) => {
+            const cut = l.indexOf(". ");
+            const html = cut > 0 ? `${esc(l.slice(0, cut + 1))} <em>${esc(l.slice(cut + 2))}</em>` : esc(l);
+            return `<p data-k="c${i}">${html}</p>`;
+          }).join("")}</div>
+          <div class="pf-flare"></div>
+          <div class="pf-end">
+            ${C.company.logoWhite ? `<div class="pf-logo"><img src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}"><i class="oc-shine"></i></div>` : `<b>${esc(C.company.shortName)}</b>`}
+            <p>${esc(F.tagline || "Order to delivery, fully connected.")}</p>
+          </div>
+        </div>`;
+    }
+
     function stageScene() {
       const ST = INTRO.stage || {};
       const left = esc(ST.left || "LIT"), right = esc(ST.right || "PAX");
@@ -2321,8 +2380,7 @@
           </div>
         </div>
         ${kineticScene()}
-        ${stageScene()}
-        ${explodedScene()}
+        ${filmScene()}
         <div class="in-card"><span>${esc(C.company.name.replace(/ Pvt\. Ltd\.?/i, ""))}</span><em>presents</em></div>
         ${fxLayers()}
         <div class="in-skip">Press any key to skip</div>`;
@@ -2375,6 +2433,7 @@
       draw(); arcTimer = setInterval(draw, 70);
     }
     const setAs = (t) => { const el = box.querySelector('[data-k="asl"]'); if (el) el.textContent = t; };
+    const fsay = (n) => { const v = ((INTRO.film || {}).voice || [])[n - 1]; if (v) Voice.say("pf-" + n, v, { rate: 0.88 }); };
     const line = (n) => { const t = (VO.intro || [])[n]; if (t) Voice.say("intro-" + (n + 1), t, { rate: 0.86, pitch: 0.95 }); };
 
     function hudRun(fromAlt, toAlt, fromSpd, toSpd, ms) {
@@ -2423,33 +2482,19 @@
         [2300,  () => addC("p-card-out")],
         [D + 100, () => { addC("k-on"); SFX.musicLevel(0.06, 1); }],
         ...Array.from({ length: KW }, (_, i) => [D + 300 + i * BEAT, () => word(i)]),
-        [S0,        () => { addC("k-out"); SFX.musicLevel(0.012, 0.4); }],             // hard cut to black
-        [S0 + 1000, () => { addC("s-on"); addC("s-l0"); SFX.clunk(); }],               // spotlights, one by one
-        [S0 + 1380, () => { addC("s-l1"); SFX.clunk(); }],
-        [S0 + 1760, () => { addC("s-l2"); SFX.clunk(); }],
-        [S0 + 2140, () => { addC("s-l3"); SFX.clunk(); SFX.musicLevel(0.04, 2); }],
-        [S0 + 2600, () => addC("s-walk")],                                               // LIT from the left, PAX from the right (slow)
-        ...Array.from({ length: 10 }, (_, i) => [S0 + 2800 + i * 460, () => SFX.step()]),
-        [S0 + 5900, () => { addC("s-charge"); arcs(true); }],                           // energy arcs between LIT and PAX
-        [S0 + 7400, () => { arcs(false); addC("s-join"); SFX.clank(); }],               // clank — LIT + PAX
-        [S0 + 8100, () => { addC("s-logo"); addC("s-morph"); SFX.whoosh(1.1); SFX.shimmer(); }],   // light sweep turns the text into the logo
-        [S0 + 9200, () => { addC("s-done"); SFX.drop(); SFX.musicLevel(0.065, 1); }],
-        [S0 + 9700, () => addC("s-nod")],                                                // the two turn to each other and nod
-        [S0 + 10100, () => { addC("s-tag"); Voice.say("stage", (VO.lines || {}).stage || "Two people. One vision.", { rate: 0.86 }); }],
-        ...[
-          [7800, () => addC("s-out")],
-          [8200, () => { addC("b-show"); SFX.shimmer(); }],
-          [8900, () => { addC("b-explode"); SFX.whoosh(1.4); line(0); }],               // "Engineered… layer by layer."
-          [11300, () => SFX.riser(1.2)],
-          [12400, () => { addC("b-snap"); SFX.kick(true); }],
-          [12800, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],
-          [13300, () => { addC("p-charge"); line(1); }],
-          [14500, () => { addC("p-brand"); SFX.shimmer(); }],
-          [15200, () => { addC("p-lines"); line(2); }],
-          [17800, () => { addC("p-close"); line(3); }],
-          [21400, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
-          [22400, finish]
-        ].map(([ms, fn]) => [S0 + ms + 5000, fn])                                        // everything after the logo moves later
+        [S0,         () => { addC("k-out"); SFX.musicLevel(0.012, 1.2); }],             // the words dissolve into black
+        [S0 + 700,   () => SFX.piano([220, 329.6], 0.06)],                               // a soft piano note
+        [S0 + 1000,  () => addC("f-line")],                                              // a thin line of light
+        [S0 + 2100,  () => { addC("f-open"); SFX.musicLevel(0.035, 3); }],               // it opens into a studio
+        [S0 + 2500,  () => addC("f-batt")],                                              // the battery turns slowly out of the dark
+        [S0 + 3900,  () => { addC("f-c0"); fsay(1); }],                                  // "Designed and built in Haryana."
+        [S0 + 6400,  () => { addC("f-c1"); fsay(2); SFX.piano([277.2], 0.04); }],        // "Every cell. Tracked."
+        [S0 + 8700,  () => { addC("f-c2"); fsay(3); }],                                  // "Every pack. Tested."
+        [S0 + 11000, () => { addC("f-front"); SFX.piano([220, 277.2, 329.6, 440], 0.05); SFX.shimmer(); }],   // the X lights up + lens flare
+        [S0 + 12600, () => addC("f-copyout")],
+        [S0 + 13100, () => { addC("f-end"); fsay(4); SFX.musicLevel(0.055, 2); }],      // logo + "Order to delivery, fully connected."
+        [S0 + 17600, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
+        [S0 + 18600, finish]
       ];
       T.forEach(([ms, fn]) => at(ms, fn));
     }
@@ -2458,7 +2503,7 @@
       timers.forEach(clearTimeout); timers = [];
       arcs(false);
       Voice.stop(); SFX.music(0.055);
-      box.classList.add("p-card-out", "k-out", "s-out", "b-snap", "d-impact", "p-exit", "fast");
+      box.classList.add("p-card-out", "k-out", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
     }
