@@ -43,6 +43,12 @@ window.PITCH_CONFIG = {
     kinetic: ["Cells.", "Strips.", "BMS.", "Every station scanned.", "Every battery tracked.", "Zero compromise."],
     /* labels for the exploded battery, bottom layer first */
     layers: ["Base tray", "Lithium cells", "Nickel strips", "Smart BMS", "Litpax casing"],
+    /* the product film after the typing words (premium, calm) */
+    film: {
+      lines: ["Designed and built in Haryana.", "Every cell. Tracked.", "Every pack. Tested."],
+      tagline: "Order to delivery, fully connected.",
+      voice: ["Designed and built in Haryana.", "Every cell. Tracked.", "Every pack. Tested.", "Litpax. Order to delivery, fully connected."]
+    },
     /* the stage shot: two silhouettes carry the halves of the name ("m" / "f" figure) */
     stage: { left: "LIT", right: "PAX", leftFigure: "m", rightFigure: "f", tagline: "Two people. One vision." },
     chargeLabel: "Litpax 74V · Charging",
