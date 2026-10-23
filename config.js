@@ -85,7 +85,7 @@ window.PITCH_CONFIG = {
       "track": "This is a real order inside our ERP. Every item is followed — from the moment you order, through production and billing, until it leaves our gate.",
       "versus": "Here is the difference, side by side. Where a typical supplier asks you to call and wait, we show you everything, live.",
       "products": "Our range covers two-wheeler packs, e-cycle and prismatic packs — with matched smart chargers.",
-      "voices": "And here is what our partners say about us.",
+      "voices": "And here is what our customers say, in their own words.",
       "start": "Working with us is simple. Talk to us, we recommend the right pack, and from your very first order, you see everything live.",
       "title": "Welcome to Litpax Technology. Let us show you how our system runs — from order to delivery, fully connected.",
       "ambition": "Our goal is simple, and bold. Zero percent defect in manufacturing. One team. One goal. Every pack, right the first time.",
@@ -218,8 +218,11 @@ window.PITCH_CONFIG = {
   /* ---------- TESTIMONIALS (real entries from the Customer Review form)
      Take each partner's permission before presenting their name. ---------- */
   testimonials: [
+    { quote: "I had a great experience with Litpax. The battery quality is impressive, and the team is very supportive. Keep up the good work.", name: "Pankaj", place: "" },
+    { quote: "Really happy with my experience with Litpax. Good product, professional support and a brand that focuses on customer satisfaction.", name: "Sahil", place: "" },
     { quote: "Best service.", name: "KPR Electric Vehicles", place: "Amritsar, Punjab" },
-    { quote: "Lithium batteries saaf urja, behtar performance aur bharosemand power solutions ka bhavishya hain.", name: "Poonam", place: "Sirsa, Haryana" }
+    { quote: "Lithium batteries saaf urja, behtar performance aur bharosemand power solutions ka bhavishya hain.", name: "Poonam", place: "Sirsa, Haryana" },
+    { quote: "A great experience overall.", name: "Madhusudan", place: "" }
   ],
 
   /* ---------- AMBITION slide (Milestone 2027) ---------- */
