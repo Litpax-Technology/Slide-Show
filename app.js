@@ -1602,6 +1602,21 @@
       });
     };
     api.tick = () => api.whoosh(0.45, false);
+    api.clunk = () => {
+      if (!ac) return;
+      const t = now(), o = ac.createOscillator();
+      o.type = "sine"; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.25);
+      o.connect(gainEnv(t, 0.003, 0.45, 0.75)); o.start(t); o.stop(t + 0.5);
+      const n = noise(), f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1400; f.Q.value = 2;
+      n.connect(f); f.connect(gainEnv(t, 0.002, 0.12, 0.35)); n.start(t); n.stop(t + 0.15);
+      const hum = ac.createOscillator(); hum.type = "sawtooth"; hum.frequency.value = 100;
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 300; hum.connect(lp); lp.connect(gainEnv(t + 0.05, 0.3, 1.6, 0.02)); hum.start(t); hum.stop(t + 2);
+    };
+    api.step = () => {
+      if (!ac) return;
+      const t = now(), n = noise(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 500;
+      n.connect(f); f.connect(gainEnv(t, 0.004, 0.09, 0.22)); n.start(t); n.stop(t + 0.12);
+    };
     api.kick = (hard) => {
       if (!ac) return;
       const t = now(), o = ac.createOscillator();
@@ -2197,6 +2212,41 @@
         </div>`;
     }
     // Exploded 3D battery — layers separate with labels, then snap together
+    // Stage: blackout → spotlights switch on one by one → two silhouettes carry LIT and PAX → join → logo
+    function stageScene() {
+      const ST = INTRO.stage || {};
+      const left = esc(ST.left || "LIT"), right = esc(ST.right || "PAX");
+      // side-view silhouette walking right, arms raised holding the sign overhead
+      const leg = (cls) => `
+            <g class="wk-thigh ${cls}"><path class="lg" d="M58 126 L58 172"/>
+              <g class="wk-shin"><path class="sh" d="M58 172 L58 216"/><path class="ft" d="M57 217 L71 219"/></g>
+            </g>`;
+      const person = () => `
+        <svg class="wk-fig" viewBox="0 0 120 240" aria-hidden="true">
+          <g class="wk-body">
+            ${leg("b")}
+            <path class="arm" d="M62 74 L57 44 L67 16"/>
+            <path d="M51 66 Q63 61 71 70 L69 118 Q63 131 52 129 L48 94 Q45 77 51 66 Z"/>
+            <path class="nk" d="M61 57 L59 67"/>
+            <ellipse cx="64" cy="47" rx="11.5" ry="12.5"/>
+            <path class="arm" d="M57 74 L50 45 L58 16"/>
+            ${leg("a")}
+          </g>
+        </svg>`;
+      const lamps = [18, 38, 62, 82];
+      return `
+        <div class="stg">
+          <div class="st-floor"></div>
+          ${lamps.map((x, i) => `<div class="st-light" style="left:${x}%;--i:${i}"><div class="st-beam"></div><div class="st-lamp"></div><div class="st-pool"></div></div>`).join("")}
+          <div class="st-dust">${sparks(22)}</div>
+          <div class="wk l"><div class="wk-sign">${left}</div>${person()}</div>
+          <div class="wk r"><div class="wk-sign">${right}</div>${person()}</div>
+          <div class="st-word"><span class="a">${left}</span><span class="b">${right}</span></div>
+          ${C.company.logoWhite ? `<img class="st-logo" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : ""}
+          <div class="st-flash"></div>
+        </div>`;
+    }
+
     function explodedScene() {
       const L = INTRO.layers || ["Base tray", "Lithium cells", "Nickel strips", "Smart BMS", "Litpax casing"];
       const logo = C.company.logoWhite ? `<img src="${esc(C.company.logoWhite)}" alt="">` : `<b>${esc(C.company.shortName)}</b>`;
@@ -2236,6 +2286,7 @@
           </div>
         </div>
         ${kineticScene()}
+        ${stageScene()}
         ${explodedScene()}
         <div class="in-card"><span>${esc(C.company.name.replace(/ Pvt\. Ltd\.?/i, ""))}</span><em>presents</em></div>
         ${fxLayers()}
@@ -2304,23 +2355,33 @@
         const k = kt(); k.classList.remove("hit"); void k.offsetWidth; k.classList.add("hit");
         if (i === KW - 1) { SFX.kick(true); SFX.drop(); } else SFX.kick();
       };
+      const S0 = D + 300 + KW * BEAT + 700;      // the stage shot starts here
       const T = [
         [150,   () => { addC("p-card"); SFX.music(0.03); }],
         [2300,  () => addC("p-card-out")],
         [D + 100, () => { addC("k-on"); SFX.musicLevel(0.06, 1); }],
         ...Array.from({ length: KW }, (_, i) => [D + 300 + i * BEAT, () => word(i)]),
-        [D + 300 + KW * BEAT + 700,  () => { addC("k-out"); SFX.whoosh(1.2, true); }],
-        [D + 300 + KW * BEAT + 1000, () => { addC("b-show"); SFX.shimmer(); }],      // assembled pack, slowly orbiting
-        [D + 300 + KW * BEAT + 2300, () => { addC("b-explode"); SFX.whoosh(1.4); line(0); }],   // "Engineered… layer by layer."
-        [D + 300 + KW * BEAT + 5600, () => SFX.riser(1.2)],
-        [D + 300 + KW * BEAT + 6800, () => { addC("b-snap"); SFX.kick(true); }],     // snap together
-        [D + 300 + KW * BEAT + 7200, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],
-        [D + 300 + KW * BEAT + 7700, () => { addC("p-charge"); line(1); }],          // "Built in-house. Tracked at every step."
-        [D + 300 + KW * BEAT + 8900, () => { addC("p-brand"); SFX.shimmer(); }],
-        [D + 300 + KW * BEAT + 9600, () => { addC("p-lines"); line(2); }],           // "Every call answered. Every battery tracked."
-        [D + 300 + KW * BEAT + 12200, () => { addC("p-close"); line(3); }],          // "Our quality. Our commitment. Our future."
-        [D + 300 + KW * BEAT + 15800, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
-        [D + 300 + KW * BEAT + 16800, finish]
+        [S0,        () => { addC("k-out"); SFX.musicLevel(0.012, 0.4); }],             // hard cut to black
+        [S0 + 1000, () => { addC("s-on"); addC("s-l0"); SFX.clunk(); }],               // spotlights, one by one
+        [S0 + 1380, () => { addC("s-l1"); SFX.clunk(); }],
+        [S0 + 1760, () => { addC("s-l2"); SFX.clunk(); }],
+        [S0 + 2140, () => { addC("s-l3"); SFX.clunk(); SFX.musicLevel(0.04, 2); }],
+        [S0 + 2600, () => addC("s-walk")],                                               // LIT from the left, PAX from the right
+        ...Array.from({ length: 7 }, (_, i) => [S0 + 2800 + i * 400, () => SFX.step()]),
+        [S0 + 5500, () => { addC("s-join"); SFX.kick(true); }],                          // click — LIT + PAX
+        [S0 + 5800, () => { addC("s-logo"); SFX.drop(); SFX.shimmer(); SFX.musicLevel(0.065, 1); }],
+        [S0 + 7800, () => addC("s-out")],
+        [S0 + 8200, () => { addC("b-show"); SFX.shimmer(); }],
+        [S0 + 8900, () => { addC("b-explode"); SFX.whoosh(1.4); line(0); }],            // "Engineered… layer by layer."
+        [S0 + 11300, () => SFX.riser(1.2)],
+        [S0 + 12400, () => { addC("b-snap"); SFX.kick(true); }],
+        [S0 + 12800, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],
+        [S0 + 13300, () => { addC("p-charge"); line(1); }],
+        [S0 + 14500, () => { addC("p-brand"); SFX.shimmer(); }],
+        [S0 + 15200, () => { addC("p-lines"); line(2); }],
+        [S0 + 17800, () => { addC("p-close"); line(3); }],
+        [S0 + 21400, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
+        [S0 + 22400, finish]
       ];
       T.forEach(([ms, fn]) => at(ms, fn));
     }
@@ -2328,7 +2389,7 @@
       if (!api.running) return;
       timers.forEach(clearTimeout); timers = [];
       Voice.stop(); SFX.music(0.055);
-      box.classList.add("p-card-out", "k-out", "b-snap", "d-impact", "p-exit", "fast");
+      box.classList.add("p-card-out", "k-out", "s-out", "b-snap", "d-impact", "p-exit", "fast");
       reveal();
       timers.push(setTimeout(finish, 450));
     }
