@@ -541,24 +541,38 @@
     });
   }
 
-  // 7d. What our partners say (real reviews from the Customer Review form)
+  // 7d. What our partners say — featured quote that rotates + list of all partners (real reviews)
   const VOICES = (C.testimonials || []).filter((t) => t && t.quote);
   if (VOICES.length) {
+    const ini = (n) => esc((n || "").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase());
     slides.push({
-      title: "What our partners say", cls: "s-voices",
+      title: "What our customers say", cls: "s-voices", hero: "voices",
       html: chrome(`
-        <div class="center-head compact">
-          <div class="eyebrow rv">From our Customer Review form</div>
-          <h2 class="rv">What our partners say.</h2>
-        </div>
-        <div class="voices">${VOICES.map((t) => `
-          <div class="voice-c rv">
-            ${t.stars ? `<div class="voice-stars">${ICON.star.repeat(t.stars)}</div>` : ""}
-            <p>${esc(t.quote)}</p>
-            <div class="voice-who"><div class="av">${esc((t.name || "").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase())}</div>
-              <div><b>${esc(t.name)}</b><span>${esc(t.place || "")}</span></div></div>
-          </div>`).join("")}
-        </div>`, { kicker: "Partners" })
+        <div class="tm">
+          <div class="tm-left">
+            <div class="eyebrow rv">In their words</div>
+            <h2 class="rv">What our customers say.</h2>
+            <div class="tm-feature rv">
+              <svg class="tm-q" viewBox="0 0 48 36" aria-hidden="true"><path d="M0 36V22C0 9 7 2 19 0l2 5c-7 2-10 6-10 12h9v19zm27 0V22c0-13 7-20 19-22l2 5c-7 2-10 6-10 12h9v19z"/></svg>
+              <div class="tm-stack">${VOICES.map((t, i) => `
+                <figure class="tm-item${i === 0 ? " on" : ""}" data-k="q${i}">
+                  <blockquote>${esc(t.quote)}</blockquote>
+                  <figcaption><div class="av">${ini(t.name)}</div><div><b>${esc(t.name)}</b>${t.place ? `<span>${esc(t.place)}</span>` : ""}</div></figcaption>
+                </figure>`).join("")}
+              </div>
+              <div class="tm-dots">${VOICES.map((_, i) => `<i data-k="d${i}"${i === 0 ? ' class="on"' : ""}></i>`).join("")}</div>
+            </div>
+          </div>
+          <div class="tm-list">
+            ${VOICES.map((t, i) => `
+              <div class="tm-row${i === 0 ? " on" : ""}" data-k="r${i}">
+                <div class="av">${ini(t.name)}</div>
+                <div class="tm-who"><b>${esc(t.name)}</b>${t.place ? `<span>${esc(t.place)}</span>` : ""}</div>
+                <div class="tm-bar"><i></i></div>
+              </div>`).join("")}
+            <div class="tm-src rv">${ICON.check} Shared through our Customer Review form</div>
+          </div>
+        </div>`, { kicker: "Customers" })
     });
   }
 
@@ -1360,6 +1374,21 @@
       el.classList.remove("go"); void el.offsetWidth;
       await c.wait(150); el.classList.add("go");
       SFX.whoosh(1.4, true);
+    },
+    voices: async (el, c) => {
+      const items = qa(el, ".tm-item"), rows = qa(el, ".tm-row"), dots = qa(el, ".tm-dots i"), n = items.length;
+      const show = (i) => {
+        items.forEach((x, j) => { x.classList.toggle("on", j === i); x.classList.toggle("off", j !== i); });
+        dots.forEach((x, j) => x.classList.toggle("on", j === i));
+        rows.forEach((x, j) => { x.classList.remove("on"); x.classList.toggle("seen", j < i); });
+        void el.offsetWidth; rows[i].classList.add("on");
+      };
+      let i = 0; show(0);
+      await c.wait(800);
+      while (c.alive) {
+        await c.wait(4800);
+        i = (i + 1) % n; show(i);
+      }
     },
     crm: async (el, c) => {
       const k = K(el), you = el.querySelector(".crm-you"), plant = el.querySelector(".crm-plant");
