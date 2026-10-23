@@ -2130,3 +2130,6 @@ h2 { letter-spacing: -.035em; }
 #intro.o-logo .oc-map { opacity: 0; transition: opacity .6s ease; }
 .oc-line { top: 42%; }
 #intro.o-final .oc-build, #intro.o-final .oc-tags, #intro.o-final .oc-logo { opacity: 0; filter: blur(8px); transition: opacity .9s ease, filter .9s ease; }
+/* closing: background goes black faster; "Let's build together" waits for the taglines to clear */
+#intro.outro .oc-bg { transition-duration: .8s; }
+.oc-build .ow > span { transition-delay: calc(var(--w) * 70ms + .7s); }
