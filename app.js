@@ -2241,8 +2241,12 @@
           <div class="st-dust">${sparks(22)}</div>
           <div class="wk l"><div class="wk-sign">${left}</div>${person()}</div>
           <div class="wk r"><div class="wk-sign">${right}</div>${person()}</div>
-          <div class="st-word"><span class="a">${left}</span><span class="b">${right}</span></div>
-          ${C.company.logoWhite ? `<img class="st-logo" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : ""}
+          <div class="st-mark">
+            <div class="st-word"><span class="a">${left}</span><span class="b">${right}</span></div>
+            ${C.company.logoWhite ? `<img class="st-logo" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : ""}
+            <i class="st-sweep"></i>
+            <div class="st-sparks">${Array.from({ length: 16 }, (_, i) => `<b style="--y:${(i * 37) % 100}%;--d:${(i * 0.06).toFixed(2)}s;--dx:${(((i * 53) % 40) - 10)}px;--dy:${(((i * 29) % 60) - 30)}px"></b>`).join("")}</div>
+          </div>
           <div class="st-flash"></div>
         </div>`;
     }
@@ -2344,6 +2348,9 @@
       build();
       box.hidden = false;
       box.className = "";
+      const sw = box.querySelector(".st-word"), sl = box.querySelector(".st-logo");
+      const fitLogo = () => { if (sw && sl && sl.naturalWidth) sl.style.height = (sw.offsetWidth / (sl.naturalWidth / sl.naturalHeight)) + "px"; };
+      if (sl && !sl.complete) sl.onload = fitLogo; else fitLogo();
       box.style.setProperty("--cover", Math.max(window.innerWidth / 1280, window.innerHeight / 720));
       void box.offsetWidth;
       const D = 2600;   // the opening title card plays first
@@ -2366,22 +2373,25 @@
         [S0 + 1380, () => { addC("s-l1"); SFX.clunk(); }],
         [S0 + 1760, () => { addC("s-l2"); SFX.clunk(); }],
         [S0 + 2140, () => { addC("s-l3"); SFX.clunk(); SFX.musicLevel(0.04, 2); }],
-        [S0 + 2600, () => addC("s-walk")],                                               // LIT from the left, PAX from the right
-        ...Array.from({ length: 7 }, (_, i) => [S0 + 2800 + i * 400, () => SFX.step()]),
-        [S0 + 5500, () => { addC("s-join"); SFX.kick(true); }],                          // click — LIT + PAX
-        [S0 + 5800, () => { addC("s-logo"); SFX.drop(); SFX.shimmer(); SFX.musicLevel(0.065, 1); }],
-        [S0 + 7800, () => addC("s-out")],
-        [S0 + 8200, () => { addC("b-show"); SFX.shimmer(); }],
-        [S0 + 8900, () => { addC("b-explode"); SFX.whoosh(1.4); line(0); }],            // "Engineered… layer by layer."
-        [S0 + 11300, () => SFX.riser(1.2)],
-        [S0 + 12400, () => { addC("b-snap"); SFX.kick(true); }],
-        [S0 + 12800, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],
-        [S0 + 13300, () => { addC("p-charge"); line(1); }],
-        [S0 + 14500, () => { addC("p-brand"); SFX.shimmer(); }],
-        [S0 + 15200, () => { addC("p-lines"); line(2); }],
-        [S0 + 17800, () => { addC("p-close"); line(3); }],
-        [S0 + 21400, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
-        [S0 + 22400, finish]
+        [S0 + 2600, () => addC("s-walk")],                                               // LIT from the left, PAX from the right (slow)
+        ...Array.from({ length: 10 }, (_, i) => [S0 + 2800 + i * 460, () => SFX.step()]),
+        [S0 + 7400, () => { addC("s-join"); SFX.kick(true); }],                          // click — LIT + PAX
+        [S0 + 8100, () => { addC("s-logo"); addC("s-morph"); SFX.whoosh(1.1); SFX.shimmer(); }],   // light sweep turns the text into the logo
+        [S0 + 9200, () => { addC("s-done"); SFX.drop(); SFX.musicLevel(0.065, 1); }],
+        ...[
+          [7800, () => addC("s-out")],
+          [8200, () => { addC("b-show"); SFX.shimmer(); }],
+          [8900, () => { addC("b-explode"); SFX.whoosh(1.4); line(0); }],               // "Engineered… layer by layer."
+          [11300, () => SFX.riser(1.2)],
+          [12400, () => { addC("b-snap"); SFX.kick(true); }],
+          [12800, () => { addC("d-impact"); SFX.drop(); SFX.charge(); SFX.musicLevel(0.07, 1.5); }],
+          [13300, () => { addC("p-charge"); line(1); }],
+          [14500, () => { addC("p-brand"); SFX.shimmer(); }],
+          [15200, () => { addC("p-lines"); line(2); }],
+          [17800, () => { addC("p-close"); line(3); }],
+          [21400, () => { addC("p-exit"); reveal(); SFX.musicLevel(0.055, 3); }],
+          [22400, finish]
+        ].map(([ms, fn]) => [S0 + ms + 3000, fn])                                        // everything after the logo moves later
       ];
       T.forEach(([ms, fn]) => at(ms, fn));
     }
