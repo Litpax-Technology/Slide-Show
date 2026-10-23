@@ -2355,3 +2355,19 @@ h2 { letter-spacing: -.035em; }
 .st-tag { position: absolute; left: 0; right: 0; bottom: 47vh; text-align: center; z-index: 3; font-size: 3.6vh; font-weight: 700; letter-spacing: .08em; color: #fff;
   opacity: 0; transform: translateY(1.5vh); filter: blur(6px); transition: opacity 1.2s ease, transform 1.4s cubic-bezier(.16,1,.3,1), filter 1.2s ease; text-shadow: 0 0 3vh rgba(var(--accent-rgb), .45); }
 #intro.s-tag .st-tag { opacity: 1; transform: none; filter: none; }
+
+/* ---------- closing dedication (MIS → founders) ---------- */
+#intro.o-ded .oc-final { opacity: 0; transform: translateY(-62%); filter: blur(6px); transition: opacity 1s ease, transform 1.4s cubic-bezier(.16,1,.3,1), filter 1s ease; }
+.oc-ded { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 30vh; z-index: 5; pointer-events: none; }
+.oc-ded p { position: absolute; left: 0; right: 0; top: 0; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 1.6vh; text-align: center; }
+.oc-ded .l1 { font-size: 5.6vh; font-weight: 800; letter-spacing: -.03em; color: #fff; line-height: 1.1; }
+.oc-ded .l2 { font-size: 3.6vh; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+.oc-ded .l2 .ow > span { background: linear-gradient(100deg, var(--accent), var(--accent-light)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.oc-ded .ow > span { transition-delay: calc(var(--w) * 90ms + .2s); transition-duration: 1.1s; }
+#intro.o-d1 .oc-ded .d1 .ow > span, #intro.o-d2 .oc-ded .d2 .ow > span { transform: none; }
+.oc-ded p { transition: opacity 1s ease, filter 1s ease, transform 1.2s cubic-bezier(.16,1,.3,1); }
+#intro.o-d2 .oc-ded .d1 { opacity: 0; filter: blur(8px); transform: translateY(-3vh); }
+.oc-ded .sig { position: absolute; left: 0; right: 0; top: 21vh; text-align: center; font-size: 2vh; font-weight: 600; font-style: italic; letter-spacing: .06em; color: rgba(255,255,255,.65);
+  opacity: 0; transform: translateY(1vh); transition: opacity 1.4s ease, transform 1.4s ease; }
+#intro.o-sig .oc-ded .sig { opacity: 1; transform: none; }
+#intro.o-sig .oc-ded .sig::before { content: ""; display: block; width: 6vh; height: 1px; margin: 0 auto 1.6vh; background: linear-gradient(90deg, transparent, var(--accent-light), transparent); }
