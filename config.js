@@ -23,7 +23,7 @@ window.PITCH_CONFIG = {
     about:
       "We manufacture lithium battery packs — and we run every step of the business on our own connected digital system. From your first enquiry to after-sales service, every order, every battery and every action is tracked.",
     contact: {
-      phone: "1800-309-8399 (Toll-free)",   // as printed on the battery label — verify
+      phone: "080 6985 9776 (Toll-free)",
       email: "",
       website: "www.litpaxtechnology.com",  // as printed on the battery label — verify
       address: "Haryana, India"
