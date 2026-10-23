@@ -2687,7 +2687,8 @@
         <div class="oc-ded">
           ${(DED.lines || []).map((l, i) => `<p class="d${i + 1}"><span class="l1">${words(l[0], 0)}</span><span class="l2">${words(l[1] || "", l[0].split(" ").length)}</span></p>`).join("")}
           <span class="sig">${esc(DED.sign || "")}</span>
-        </div>` : ""}
+        </div>
+        <div class="oc-ded-hint">Press any key to return</div>` : ""}
         ${fxLayers()}`;
       box.hidden = false; box.className = "outro";
       document.body.classList.add("outro-zoom");                 // the deck melts into the film
@@ -2717,8 +2718,8 @@
             [19800, () => { oc("o-ded"); oc("o-d1"); dsay(0); }],      // "You built the company. We built the systems to keep up with you."
             [24600, () => { oc("o-d2"); dsay(1); }],                   // "Two people. One vision. And a team proud to follow it."
             [29200, () => { oc("o-sig"); SFX.shimmer(); }],            // — With respect, Team MIS
-            [31000, () => { SFX.musicLevel(0.015, 4); api.outroEnd = true; }]
-          ] : [[18400, () => { api.outroEnd = true; }]])
+            [31000, () => { SFX.musicLevel(0.015, 4); api.outroEnd = true; oc("o-endhint"); }]
+          ] : [[18400, () => { api.outroEnd = true; oc("o-endhint"); }]])
         ].map(([ms, fn]) => [ms + 3800, fn])                       // everything after the space shot moves later
       ].forEach(([ms, fn]) => oat(ms, fn));
     }
@@ -2727,7 +2728,7 @@
       if (!api.outroEnd) {                         // first key: jump to the final frame
         oTimers.forEach(clearTimeout); oTimers = [];
         Voice.stop();
-        box.classList.add("o-on", "o-final", "fast"); api.outroEnd = true;
+        box.classList.add("o-on", "o-final", "fast", "o-endhint"); api.outroEnd = true;
         if (DED.show) box.classList.add("o-ded", "o-d1", "o-d2", "o-sig");
         SFX.musicLevel(0.02, 1);
         return;
