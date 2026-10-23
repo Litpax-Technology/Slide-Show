@@ -93,7 +93,7 @@ window.PITCH_CONFIG = {
       "crm": "And you are never talking to a stranger. Your Sales CRM owns your orders, from quotation to delivery. Your Service CRM owns every service call, until your vehicle is back on the road.",
       "track": "This is a real order inside our ERP. Every item is followed — from the moment you order, through production and billing, until it leaves our gate.",
       "versus": "Here is the difference, side by side. Where a typical supplier asks you to call and wait, we show you everything, live.",
-      "products": "Our range covers two-wheeler packs, e-cycle and prismatic packs — with matched smart chargers.",
+      "products": "Our range covers two-wheeler, e-cycle and prismatic packs, inverter and solar batteries — with matched smart chargers.",
       "voices": "And here is what our customers say, in their own words.",
       "start": "Working with us is simple. Talk to us, we recommend the right pack, and from your very first order, you see everything live.",
       "title": "Welcome to Litpax Technology. Let us show you how our system runs — from order to delivery, fully connected.",
@@ -209,6 +209,8 @@ window.PITCH_CONFIG = {
         { name: "2-Wheeler packs", desc: "Lithium ion packs for electric scooters and bikes.", specs: ["48V 32Ah", "60V 32Ah", "74V 40Ah", "74V 36Ah"] },
         { name: "E-Cycle packs", desc: "Lightweight packs built on a dedicated E-Cycle line.", specs: ["Custom configs"] },
         { name: "Prismatic packs", desc: "Prismatic-cell packs from our prismatic line.", specs: ["Custom configs"] },
+        { name: "Inverter batteries", desc: "Lithium batteries for home and office inverter backup.", specs: ["Custom configs"] },
+        { name: "Solar batteries", desc: "Lithium energy storage for solar power systems.", specs: ["Custom configs"] },
         { name: "Smart chargers", desc: "Matched chargers for every pack we make.", specs: ["54V 8A", "67V 8A", "84V 8A"] }
       ]
     },
@@ -227,8 +229,8 @@ window.PITCH_CONFIG = {
   /* ---------- TESTIMONIALS (real entries from the Customer Review form)
      Take each partner's permission before presenting their name. ---------- */
   testimonials: [
-    { quote: "I had a great experience with Litpax. The battery quality is impressive, and the team is very supportive. Keep up the good work.", name: "Pankaj", place: "" },
-    { quote: "Really happy with my experience with Litpax. Good product, professional support and a brand that focuses on customer satisfaction.", name: "Sahil", place: "" },
+    { quote: "I had a great experience with Litpax. The battery quality is impressive, and the team is very supportive. Keep up the good work.", name: "Gautam", place: "" },
+    { quote: "Really happy with my experience with Litpax. Good product, professional support and a brand that focuses on customer satisfaction.", name: "Ravi Sihag", place: "" },
     { quote: "Best service.", name: "KPR Electric Vehicles", place: "Amritsar, Punjab" },
     { quote: "Lithium batteries saaf urja, behtar performance aur bharosemand power solutions ka bhavishya hain.", name: "Poonam", place: "Sirsa, Haryana" },
     { quote: "A great experience overall.", name: "Madhusudan", place: "" }
@@ -288,7 +290,7 @@ window.PITCH_CONFIG = {
   /* Background music: put a royalty-free track at this path to use it;
      if the file is missing, a soft cinematic track is generated in code. */
   music: "assets/music.mp3",
-  musicVolume: 0.35,
+  musicVolume: 0.5,      // 0 – 1
 
   /* Dedication from the MIS team — plays after "Thank you." in the closing film.
      Set show: false when presenting to clients. */
