@@ -1374,7 +1374,7 @@
     div: async (el, c) => {
       el.classList.remove("go"); void el.offsetWidth;
       await c.wait(150); el.classList.add("go");
-      SFX.whoosh(1.4, true);
+      SFX.kick();                              // a low hit as the chapter number lands (the wipe carries the swish)
     },
     voices: async (el, c) => {
       const items = qa(el, ".tm-item"), rows = qa(el, ".tm-row"), dots = qa(el, ".tm-dots i"), n = items.length;
@@ -1509,7 +1509,7 @@
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     };
     api.ready = () => !!ac;
-    api.setMuted = (m) => { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ac.currentTime, 0.05); if (fileMusic) fileMusic.muted = m; };
+    api.setMuted = (m) => { muted = m; if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ac.currentTime, 0.05); if (fEl) fEl.muted = m; };
     api.isMuted = () => muted;
     const now = () => ac.currentTime;
     const gainEnv = (t, a, d, peak, dest) => {
@@ -1530,14 +1530,14 @@
         osc.connect(gainEnv(t, 0.012, 0.3, i ? 0.55 : 0.8)); osc.start(t); osc.stop(t + 0.4);
       });
     };
-    api.whoosh = (dur, big) => {
+    api.whoosh = (dur, big, peak) => {
       if (!ac) return;
       dur = dur || 1; const t = now(), n = noise(), f = ac.createBiquadFilter();
       f.type = "bandpass"; f.Q.value = big ? 0.8 : 1.4;
       f.frequency.setValueAtTime(big ? 180 : 400, t);
       f.frequency.exponentialRampToValueAtTime(big ? 2600 : 2200, t + dur * 0.6);
       f.frequency.exponentialRampToValueAtTime(big ? 220 : 500, t + dur);
-      n.connect(f); f.connect(gainEnv(t, dur * 0.5, dur * 0.5, big ? 0.55 : 0.18));
+      n.connect(f); f.connect(gainEnv(t, dur * 0.5, dur * 0.5, peak || (big ? 0.55 : 0.18)));
       n.start(t); n.stop(t + dur + 0.1);
     };
     api.boom = () => {
@@ -1602,7 +1602,8 @@
         o.connect(gainEnv(t, 0.005, 0.7, 0.08)); o.start(t); o.stop(t + 0.8);
       });
     };
-    api.tick = () => api.whoosh(0.45, false);
+    api.tick = () => api.whoosh(0.4, false, 0.06);          // soft air on a normal cut
+    api.wipe = () => api.whoosh(0.95, true, 0.26);          // fuller swish on a chapter wipe
     api.clunk = () => {
       if (!ac) return;
       const t = now(), o = ac.createOscillator();
@@ -1711,20 +1712,7 @@
       tick();
     };
     // level changes also apply to the music file (0.055 = normal level)
-    let fileLvl = 1, fileRaf = null;
-    const rampFile = (target, sec) => {
-      if (!fileMusic) return;
-      cancelAnimationFrame(fileRaf);
-      const from = fileLvl, t0 = performance.now(), ms = (sec || 1) * 1000;
-      const step = (t) => {
-        const p = Math.min(1, (t - t0) / ms);
-        fileLvl = from + (target - from) * p;
-        fileMusic.volume = Math.max(0, Math.min(1, fileVol * fileLvl * (ducked ? 0.3 : 1)));
-        if (p < 1) fileRaf = requestAnimationFrame(step);
-      };
-      fileRaf = requestAnimationFrame(step);
-    };
-    let ducked = false;
+    const rampFile = (target, sec) => { fileLvl = target; applyFile(sec || 1); };
     api.musicLevel = (lvl, sec) => { musicLevel = lvl; if (music) music.out.gain.setTargetAtTime(lvl, now(), (sec || 1) / 3); rampFile(Math.min(1.4, lvl / 0.055), sec); };
     api.riser = (sec) => {
       if (!ac) return;
@@ -1748,24 +1736,69 @@
       if (pad) pad.out.gain.setTargetAtTime(on ? padLevel * 0.25 : padLevel, ac.currentTime, 0.25);
       if (music) music.out.gain.setTargetAtTime(on ? musicLevel * 0.3 : musicLevel, ac.currentTime, 0.3);
       ducked = on;
-      if (fileMusic) fileMusic.volume = Math.max(0, Math.min(1, fileVol * fileLvl * (on ? 0.3 : 1)));
+      applyFile(on ? 0.5 : 1.2);                 // dip under the voice, swell back gently after
     };
-    // Optional real music file (config.music) — used instead of the generated track when it exists
-    let fileMusic = null, fileVol = 0.35;
+    // Optional real music file (config.music) — used instead of the generated track when it exists.
+    // The track is decoded once and looped with an equal-power crossfade, so the loop point is never heard.
+    let fileMusic = null, fileVol = 0.35, fileLvl = 1, ducked = false, musicLoading = false, pendingLvl = 0.055;
+    let fBus = null, fEl = null, fRaf = null;
+    const fileTarget = () => Math.max(0, Math.min(1, fileVol * fileLvl * (ducked ? 0.3 : 1)));
+    function applyFile(sec) {
+      if (!fileMusic) return;
+      const v = fileTarget();
+      if (fBus) { fBus.gain.cancelScheduledValues(now()); fBus.gain.setTargetAtTime(Math.max(0.0001, v), now(), Math.max(0.02, sec / 3)); return; }
+      if (!fEl) return;
+      cancelAnimationFrame(fRaf);
+      const from = fEl.volume, t0 = performance.now(), ms = Math.max(30, sec * 1000);
+      const step = (t) => {
+        const p = Math.max(0, Math.min(1, (t - t0) / ms)), e = p * p * (3 - 2 * p);
+        fEl.volume = Math.max(0, Math.min(1, from + (v - from) * e));
+        if (p < 1) fRaf = requestAnimationFrame(step);
+      };
+      fRaf = requestAnimationFrame(step);
+    }
+    const curve = (up) => Float32Array.from({ length: 64 }, (_, i) => { const x = (i / 63) * Math.PI / 2; return Math.max(0.0001, up ? Math.sin(x) : Math.cos(x)); });
     api.useFile = (src, vol) => {
-      if (!src || fileMusic) return Promise.resolve(false);
+      if (!src || fileMusic) return Promise.resolve(!!fileMusic);
       fileVol = vol || fileVol;
-      return new Promise((res) => {
-        const a = new Audio(src); a.loop = true; a.volume = fileVol;
+      const viaBuffer = () => fetch(src)
+        .then((r) => { if (!r.ok) throw new Error("no music"); return r.arrayBuffer(); })
+        .then((b) => new Promise((res, rej) => ac.decodeAudioData(b, res, rej)))
+        .then((buf) => {
+          fBus = ac.createGain(); fBus.gain.value = 0.0001; fBus.connect(master);
+          const D = buf.duration, XF = Math.min(3, D / 4), IN = curve(true), OUT = curve(false);
+          let next = now() + 0.05, first = true;
+          const feed = () => {
+            while (next < now() + 6) {
+              const s = ac.createBufferSource(), g = ac.createGain(), t = next;
+              s.buffer = buf;
+              if (first) g.gain.setValueAtTime(1, t); else g.gain.setValueCurveAtTime(IN, t, XF);
+              g.gain.setValueCurveAtTime(OUT, t + D - XF, XF);
+              s.connect(g); g.connect(fBus); s.start(t); s.stop(t + D + 0.05);
+              first = false; next = t + D - XF;
+            }
+          };
+          feed(); setInterval(feed, 2000);
+          fileMusic = true;
+          return true;
+        });
+      // file:// pages cannot fetch — fall back to a plain looping <audio>
+      const viaElement = () => new Promise((res) => {
+        const a = new Audio(src); a.loop = true; a.volume = 0; a.muted = muted;
         a.onerror = () => res(false);
-        a.play().then(() => { fileMusic = a; res(true); }).catch(() => res(false));
+        a.play().then(() => { fEl = a; fileMusic = true; res(true); }).catch(() => res(false));
       });
+      return (ac && window.fetch ? viaBuffer() : Promise.reject()).catch(viaElement);
     };
     api.music = (level) => {
-      if (fileMusic) return;
+      pendingLvl = level || pendingLvl;
+      if (fileMusic || music || musicLoading) { if (fileMusic || music) api.musicLevel(pendingLvl, 2); return; }
+      musicLoading = true;
       api.useFile(C.music, C.musicVolume).then((ok) => {
-        if (!ok) return api.musicStart(level);
-        fileLvl = 0; fileMusic.volume = 0; rampFile(Math.min(1.4, (level || 0.055) / 0.055), 4);   // fade the track in
+        musicLoading = false;
+        if (!ok) return api.musicStart(pendingLvl);
+        fileLvl = 0; applyFile(0.05);
+        rampFile(Math.min(1.4, pendingLvl / 0.055), 4);   // fade the track in
       });
     };
     // ambient background pad (A minor 9), very quiet, slowly breathing
@@ -1788,6 +1821,53 @@
      NARRATION — plays assets/voice/<key>.mp3 when present,
      otherwise the most natural deep male voice the browser has.
      ========================================================= */
+  /* ---------- SUBTITLES — the narration line, phrase by phrase, timed to the voice (C toggles) ---------- */
+  const Captions = (function () {
+    const box = document.createElement("div");
+    box.id = "caption"; box.setAttribute("aria-hidden", "true");
+    box.innerHTML = "<span></span>";
+    stage.appendChild(box);
+    const span = box.firstChild;
+    let enabled = false, raf = null, shown = "";
+    const api = {};
+    api.enabled = () => enabled;
+    api.set = (on) => { enabled = on; document.body.classList.toggle("cc-on", on); if (!on) api.hide(); };
+    api.show = (txt) => {
+      txt = String(txt || "").replace(/^[—–-]\s*/, "");
+      if (!enabled || txt === shown) return;
+      shown = txt;
+      box.classList.remove("on");
+      void box.offsetWidth;                         // restart the soft rise for each new phrase
+      span.textContent = txt;
+      box.classList.add("on");
+    };
+    api.hide = () => { cancelAnimationFrame(raf); shown = ""; box.classList.remove("on"); };
+    // follow an <audio>: each phrase gets a share of the clip proportional to its length
+    api.follow = (a, parts, alive) => {
+      cancelAnimationFrame(raf);
+      // join short phrases into readable subtitle lines (≈ 72 characters), so nothing flashes past
+      parts = parts.reduce((out, p) => {
+        const last = out[out.length - 1];
+        if (last && (last + " " + p).length <= 72) out[out.length - 1] = last + " " + p; else out.push(p);
+        return out;
+      }, []);
+      const total = parts.reduce((s, p) => s + p.length + 6, 0);
+      const tick = () => {
+        if (!alive() || a.paused) return;
+        const d = a.duration || 0;
+        if (d) {
+          const at = (a.currentTime / d) * total;
+          let acc = 0, i = 0;
+          for (; i < parts.length - 1; i++) { acc += parts[i].length + 6; if (at < acc) break; }
+          api.show(parts[i]);
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    return api;
+  })();
+
   const VO = Object.assign({ enabled: true, autoAdvance: false, rate: 0.92, pitch: 1, folder: "assets/voice/", lines: {}, intro: [] }, C.voice || {});
   const Voice = (function () {
     const synth = window.speechSynthesis;
@@ -1808,10 +1888,22 @@
     }
     if (synth) { pick(); synth.onvoiceschanged = pick; }
     const api = {};
+    const phrases = (text) => text.replace(/\.\.\./g, "…").split(/(?<=[.?!…])\s+|\s+(?=—)/).map((x) => x.trim()).filter(Boolean);
+    api.phrases = phrases;
+    // never hard-cut a voice: a 180 ms fade sounds like an edit, a cut sounds like a glitch
+    const fadeKill = (a) => {
+      a.onended = a.onerror = a.onplay = null;
+      const v0 = a.volume, t0 = performance.now();
+      const st = (t) => { const p = Math.max(0, Math.min(1, (t - t0) / 180)); a.volume = Math.max(0, Math.min(1, v0 * (1 - p))); if (p < 1) requestAnimationFrame(st); else a.pause(); };
+      requestAnimationFrame(st);
+    };
+    let busy = false;
+    api.busy = () => busy;
     api.stop = () => {
-      token++;
+      token++; busy = false;
       SFX.duck(false);
-      if (audio) { audio.onended = audio.onerror = null; audio.pause(); audio = null; }
+      Captions.hide();
+      if (audio) { fadeKill(audio); audio = null; }
       if (synth) synth.cancel();
     };
     api.say = (key, text, opts) => {
@@ -1819,17 +1911,18 @@
       api.stop();
       if (!VO.enabled || SFX.isMuted() || !text) { if (opts.onend) opts.onend(false); return; }
       const my = ++token;
-      const done = () => { if (my === token && opts.onend) opts.onend(true); };
+      busy = true;
+      const parts = phrases(text);
+      const done = () => { if (my !== token) return; busy = false; Captions.hide(); if (opts.onend) opts.onend(true); };
       const tts = () => {
         if (my !== token || !synth) return done();
         // short phrases spoken one after another sound far more natural than one long utterance
-        const parts = text.replace(/\.\.\./g, "…").split(/(?<=[.?!…])\s+|\s+(?=—)/).map((x) => x.trim()).filter(Boolean);
         parts.forEach((part, i) => {
           const u = new SpeechSynthesisUtterance(part);
           if (voice) u.voice = voice;
           u.lang = (voice && voice.lang) || "en-IN";
           u.rate = opts.rate || VO.rate; u.pitch = opts.pitch || VO.pitch; u.volume = 1;
-          if (i === 0) u.onstart = () => SFX.duck(true);
+          u.onstart = () => { if (my !== token) return; if (i === 0) SFX.duck(true); if (opts.caption) Captions.show(part); };
           if (i === parts.length - 1) { u.onend = () => { SFX.duck(false); done(); }; u.onerror = () => { SFX.duck(false); done(); }; }
           synth.speak(u);
         });
@@ -1837,7 +1930,7 @@
       if (!key) return tts();
       const a = new Audio(VO.folder + key + ".mp3");
       audio = a;
-      a.onplay = () => SFX.duck(true);
+      a.onplay = () => { SFX.duck(true); if (opts.caption) Captions.follow(a, parts, () => my === token); };
       a.onended = () => { SFX.duck(false); done(); };
       a.onerror = () => { if (audio === a) audio = null; tts(); };
       a.play().catch(() => { if (audio === a) { audio = null; tts(); } });
@@ -1846,14 +1939,28 @@
   })();
 
   let autoAdvance = !!VO.autoAdvance;
+  // How long each kind of slide should stay up in auto-play, at minimum, so its animation can finish
+  const HOLD = { "s-step": 7200, "s-voices": 10500, "s-fms": 9000, "s-chain": 8200, "s-trace": 8200, "s-track": 11800, "s-div": 3600, "s-end": 7000 };
+  const holdOf = (el) => { for (const k in HOLD) if (el.classList.contains(k)) return HOLD[k]; return 6000; };
   function narrate(el, c) {
     const key = el.dataset.vkey, text = VO.lines[key];
-    if (!text) { Voice.stop(); return; }
-    const idx = +el.dataset.i;
-    c.wait(700).then(() => Voice.say(key, text, {
+    const idx = +el.dataset.i, t0 = performance.now(), hold = holdOf(el);
+    // breathing room after the voice: shorter on chapter cards, longer on statement slides
+    const breath = el.classList.contains("s-div") ? 700 : el.classList.contains("s-step") ? 1100 : 1500;
+    const advance = () => {
+      if (!autoAdvance) return;
+      const left = Math.max(breath, hold - (performance.now() - t0));
+      c.wait(left).then(() => { if (cur === idx && autoAdvance && !intro.outroOn) next(); });
+    };
+    if (!text) { Voice.stop(); advance(); return; }
+    c.wait(el.classList.contains("s-div") ? 450 : 650).then(() => Voice.say(key, text, {
+      caption: true,
       onend: (spoke) => {
-        if (!autoAdvance || !spoke) return;
-        c.wait(1400).then(() => { if (cur === idx) next(); });
+        if (spoke) return advance();
+        // muted / no voice: still pace the film by how long the line would take to read aloud
+        if (!autoAdvance) return;
+        const est = text.split(/\s+/).length * 400;
+        c.wait(Math.max(hold, est + breath) - (performance.now() - t0)).then(() => { if (cur === idx && autoAdvance && !intro.outroOn) next(); });
       }
     }));
   }
@@ -1865,13 +1972,21 @@
   const ICO_ON = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>';
   const ICO_OFF = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM17 9l5 6M22 9l-5 6"/></svg>';
   const ICO_AUTO = '<svg viewBox="0 0 24 24"><path d="M5 4l10 8-10 8zM17 5v14"/></svg>';
+  const ICO_CC = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.5 10.2a2.2 2.2 0 1 0 0 3.6M17 10.2a2.2 2.2 0 1 0 0 3.6"/></svg>';
+  const ccBtn = document.createElement("button");
   function paintHud() {
     sndBtn.innerHTML = SFX.isMuted() ? ICO_OFF : ICO_ON;
     sndBtn.title = SFX.isMuted() ? "Sound off (M)" : "Sound on (M)";
     autoBtn.innerHTML = ICO_AUTO;
     autoBtn.title = autoAdvance ? "Auto-play with voice: ON (A)" : "Auto-play with voice: OFF (A)";
     autoBtn.classList.toggle("on", autoAdvance);
+    ccBtn.innerHTML = ICO_CC;
+    ccBtn.title = Captions.enabled() ? "Subtitles: ON (C)" : "Subtitles: OFF (C)";
+    ccBtn.classList.toggle("on", Captions.enabled());
+    document.body.classList.toggle("film", autoAdvance);
   }
+  function toggleCaptions() { Captions.set(!Captions.enabled()); paintHud(); }
+  ccBtn.onclick = toggleCaptions;
   function toggleSound() {
     SFX.init();
     SFX.setMuted(!SFX.isMuted());
@@ -1880,9 +1995,15 @@
     else if (els[cur]) narrate(els[cur], activeCtx || makeCtx());
     paintHud();
   }
-  function toggleAuto() { autoAdvance = !autoAdvance; paintHud(); }
+  function toggleAuto() {
+    autoAdvance = !autoAdvance; paintHud();
+    // turning auto-play on mid-slide: let the current slide finish its line, then roll on
+    if (autoAdvance && els[cur] && activeCtx && !intro.running && !intro.outroOn && !Voice.busy()) {
+      const idx = cur; activeCtx.wait(1500).then(() => { if (cur === idx && autoAdvance) next(); });
+    }
+  }
   sndBtn.onclick = toggleSound; autoBtn.onclick = toggleAuto;
-  if (hud) { const full = document.getElementById("btnFull"); hud.insertBefore(autoBtn, full); hud.insertBefore(sndBtn, full); }
+  if (hud) { const full = document.getElementById("btnFull"); hud.insertBefore(autoBtn, full); hud.insertBefore(sndBtn, full); hud.insertBefore(ccBtn, full); }
   paintHud();
 
   /* ---------- slide lifecycle ---------- */
@@ -1920,7 +2041,6 @@
     const host = el.querySelector(".scene-host");
     if (host) runScene(host, c);
     if (el.dataset.hero && HEROES[el.dataset.hero]) HEROES[el.dataset.hero](el, c);
-    SFX.tick();
     narrate(el, c);
   }
 
@@ -1945,18 +2065,89 @@
     if (cur >= els.length - 1) { if (typeof intro !== "undefined" && intro.outro) intro.outro(); return; }
     go(cur + 1);
   }
-  function go(n) {
-    n = Math.max(0, Math.min(els.length - 1, n));
-    if (n !== cur || !activeCtx) startSlide(els[n]);
+  /* ---------- THE EDIT — how one slide hands over to the next ----------
+     cut  · first slide after the intro / outro (the films already cover it)
+     fade · light → light: the old content fades out first, then the new content builds in.
+            Logo, kicker and the step tracker stay put, so consecutive slides read as one shot — no ghosting.
+     wipe · light ↔ dark (chapter cards, ambition): a push-wipe with a glowing seam. */
+  const isDark = (el) => el.classList.contains("s-div") || el.classList.contains("s-amb");
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const seam = document.createElement("div");
+  seam.id = "seam"; stage.appendChild(seam);
+  const OUT_MS = 260, WIPE_MS = 820;
+  let pending = null;
+  function settle() { if (pending) { const p = pending; pending = null; p.finish(); } }
+  function place(n, keep) {
+    stage.classList.add("instant");
     els.forEach((el, i) => {
-      el.classList.toggle("active", i === n);
+      el.classList.toggle("active", i === n || el === keep);
       el.classList.toggle("past", i < n);
     });
+    void stage.offsetWidth;
+    stage.classList.remove("instant");
+  }
+  const CUT_CLS = ["leaving", "keep-mini", "kick", "kick-out", "top-in", "top-out", "wiping", "from-r", "from-l", "under", "to-l", "to-r", "fadein"];
+
+  function go(n) {
+    n = Math.max(0, Math.min(els.length - 1, n));
+    settle();
+    const to = els[n];
+    const from = cur >= 0 && els[cur] && els[cur].classList.contains("active") ? els[cur] : null;
+    if (from === to) { if (!activeCtx) startSlide(to); return; }
+    const fwd = n > cur;
+    const mode = !from || reduced ? "cut" : isDark(from) !== isDark(to) ? "wipe" : "fade";
     cur = n;
     counter.textContent = `${n + 1} / ${els.length}`;
     bar.style.width = `${((n + 1) / els.length) * 100}%`;
-    sweep.classList.remove("go"); void sweep.offsetWidth; sweep.classList.add("go");
     try { history.replaceState(null, "", `#${n + 1}`); } catch (e) {}
+    if (activeCtx) { activeCtx.stop(); activeCtx = null; }      // freeze the outgoing slide's loops
+    Voice.stop();
+    els.forEach((el) => el.classList.remove(...CUT_CLS));
+
+    if (mode === "cut") {
+      els.forEach((el, i) => { el.classList.toggle("active", i === n); el.classList.toggle("past", i < n); });
+      startSlide(to);
+      return;
+    }
+
+    if (mode === "fade") {
+      SFX.tick();
+      sweep.classList.remove("go"); void sweep.offsetWidth; sweep.classList.add("go");
+      const kF = from.querySelector(".slide-kicker"), kT = to.querySelector(".slide-kicker");
+      const keepMini = from.classList.contains("s-step") && to.classList.contains("s-step");
+      from.classList.add("leaving");
+      from.classList.toggle("keep-mini", keepMini);
+      from.classList.toggle("top-out", !kT);
+      from.classList.toggle("kick-out", !!(kF && kT && kF.textContent !== kT.textContent));
+      to.classList.toggle("keep-mini", keepMini);
+      to.classList.toggle("top-in", !kF);
+      to.classList.toggle("kick", !!(kF && kT && kF.textContent !== kT.textContent));
+      const t = setTimeout(settle, OUT_MS);
+      pending = { finish() {
+        clearTimeout(t);
+        to.classList.add("fadein");                // content builds in right away — the stage is already clear
+        place(n);
+        from.classList.remove("leaving", "keep-mini", "top-out", "kick-out");
+        startSlide(to);
+      } };
+      return;
+    }
+
+    // wipe: the new slide is drawn over the old one, the old one is pushed back under it
+    SFX.wipe();
+    to.classList.add("wiping", fwd ? "from-r" : "from-l");
+    from.classList.add("under", fwd ? "to-l" : "to-r");
+    seam.className = ""; void seam.offsetWidth; seam.className = "run " + (fwd ? "rtl" : "ltr");
+    place(n, from);
+    startSlide(to);
+    const t = setTimeout(settle, WIPE_MS + 40);
+    pending = { finish() {
+      clearTimeout(t);
+      place(n);
+      from.classList.remove("under", "to-l", "to-r");
+      to.classList.remove("wiping", "from-r", "from-l");
+      seam.className = "";
+    } };
   }
 
   function fit() {
@@ -2008,6 +2199,7 @@
     if ((k === "e" || k === "E") && intro.outro) return intro.outro();
     if (k === "m" || k === "M") return toggleSound();
     if (k === "a" || k === "A") return toggleAuto();
+    if (k === "c" || k === "C") return toggleCaptions();
     if (!ov.hidden && k === "Escape") return closeOv();
     if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); next(); }
     else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); go(cur - 1); }
@@ -2415,8 +2607,14 @@
           ${C.company.logoWhite ? `<img class="bg-logo" src="${esc(C.company.logoWhite)}" alt="${esc(C.company.name)}">` : `<b class="bg-logo-t">${esc(C.company.shortName)}</b>`}
           <button class="bg-play" aria-label="Begin"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
           <span class="bg-t">Begin</span>
+          <button class="bg-film" type="button"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.2l5 2.8-5 2.8z"/></svg>Play as a film<em>auto-plays with voice &amp; subtitles</em></button>
           <span class="bg-h">Best experienced in full screen, with sound on</span>
         </div>`;
+      box.querySelector(".bg-film").addEventListener("click", (e) => {
+        e.stopPropagation();
+        autoAdvance = true; Captions.set(true); paintHud();
+        start();
+      });
     }
     function start() {
       api.waiting = false;
