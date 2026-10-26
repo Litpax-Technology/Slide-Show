@@ -289,7 +289,7 @@ window.PITCH_CONFIG = {
 
   /* Background music: put a royalty-free track at this path to use it;
      if the file is missing, a soft cinematic track is generated in code. */
-  music: "assets/music.mp3",
+  music: "assets/voice/music.mp3",
   musicVolume: 0.5,      // 0 – 1
 
   /* Dedication from the MIS team — plays after "Thank you." in the closing film.
