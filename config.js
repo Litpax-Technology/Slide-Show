@@ -287,7 +287,7 @@ window.PITCH_CONFIG = {
     Support: "With you long after delivery."
   },
 
-  /* Background music: put a royalty-free track at this path to use it;
+  /* Background music (the track lives in assets/voice/); loops seamlessly with a crossfade.
      if the file is missing, a soft cinematic track is generated in code. */
   music: "assets/voice/music.mp3",
   musicVolume: 0.5,      // 0 – 1
