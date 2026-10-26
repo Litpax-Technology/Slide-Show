@@ -2507,3 +2507,103 @@ h2 { letter-spacing: -.035em; }
 .prod-card b { font-size: 15px; }
 .prod-card > span { font-size: 12px; }
 .prod-specs em { font-size: 10.5px; padding: 3px 7px; }
+
+/* =========================================================
+   EDIT PASS — film-grade transitions, captions, camera moves
+   (driven by go() in app.js: "fade", "wipe" and "cut")
+   ========================================================= */
+/* the swap itself is instant — the motion lives in the content */
+#stage.instant .slide { transition: none !important; }
+#stage > .slide.active { z-index: 1; }
+
+/* FADE · light → light: old content fades out first (no ghosting), the frame stays */
+.slide.leaving .slide-inner > *:not(.slide-top):not(.mini),
+.slide.leaving.top-out .slide-top,
+.slide.leaving:not(.keep-mini) .mini,
+.slide.leaving.kick-out .slide-kicker {
+  opacity: 0 !important; transform: translateY(-8px);
+  transition: opacity .22s cubic-bezier(.4,0,1,1), transform .26s cubic-bezier(.4,0,1,1) !important;
+}
+@keyframes capIn { from { opacity: 0; transform: translateY(5px); } }
+.slide.active.kick .slide-kicker { animation: capIn .5s ease both; }
+.slide.active.top-in .slide-top { animation: capIn .6s .05s ease both; }
+.slide.active:not(.keep-mini) .mini { animation: capIn .7s .3s ease both; }
+/* the step tracker glides to the new step instead of blinking */
+@keyframes miniGrow { from { width: 16px; background: rgba(var(--accent-rgb), .45); } }
+.slide.active.keep-mini .mini-ph i.cur { animation: miniGrow .55s cubic-bezier(.2,.8,.2,1) .05s both; }
+
+/* WIPE · light ↔ dark: the new slide is drawn over the old one with a glowing seam */
+@keyframes wipeR { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
+@keyframes wipeL { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes pushR { from { transform: translateX(110px); } to { transform: none; } }
+@keyframes pushL { from { transform: translateX(-110px); } to { transform: none; } }
+#stage > .slide.under { z-index: 2; }
+#stage > .slide.wiping { z-index: 3; }
+.slide.wiping.from-r { animation: wipeR .82s cubic-bezier(.76,0,.24,1) both; }
+.slide.wiping.from-l { animation: wipeL .82s cubic-bezier(.76,0,.24,1) both; }
+.slide.wiping.from-r .slide-inner { animation: pushR .82s cubic-bezier(.76,0,.24,1) both; }
+.slide.wiping.from-l .slide-inner { animation: pushL .82s cubic-bezier(.76,0,.24,1) both; }
+.slide.under .slide-inner { opacity: .3; transition: transform .82s cubic-bezier(.76,0,.24,1), opacity .82s ease !important; }
+.slide.under.to-l .slide-inner { transform: translateX(-90px) !important; }
+.slide.under.to-r .slide-inner { transform: translateX(90px) !important; }
+/* the new slide's text builds in as the seam passes, not underneath it */
+.slide.wiping .rv { transition-delay: calc(var(--d, 0) * 70ms + 460ms) !important; }
+.slide.wiping .words .wd > span { transition-delay: calc(var(--w) * 55ms + 420ms) !important; }
+
+#seam {
+  position: absolute; top: -2%; bottom: -2%; left: 0; width: 3px; margin-left: -1.5px; z-index: 4; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, transparent, var(--accent-light) 18%, #fff 50%, var(--accent-light) 82%, transparent);
+  box-shadow: 0 0 18px 4px rgba(var(--accent-rgb), .55), 0 0 70px 16px rgba(var(--accent-rgb), .22);
+}
+@keyframes seamR { from { transform: translateX(1280px); } to { transform: translateX(0); } }
+@keyframes seamL { from { transform: translateX(0); } to { transform: translateX(1280px); } }
+@keyframes seamFade { 0% { opacity: 0; } 10% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+#seam.run.rtl { animation: seamR .82s cubic-bezier(.76,0,.24,1) both, seamFade .82s linear both; }
+#seam.run.ltr { animation: seamL .82s cubic-bezier(.76,0,.24,1) both, seamFade .82s linear both; }
+
+/* CAMERA · slow Ken Burns push on real app screenshots, so a still screen never looks frozen */
+@keyframes kb { from { transform: scale(1); } to { transform: scale(1.075) translate(-1.1%, -.9%); } }
+.slide.active .view-shot .frame-screen img,
+.slide.active .view-shot .frame-screen video { transform-origin: 22% 14%; animation: kb 16s cubic-bezier(.45,0,.55,1) .5s both; }
+
+/* SUBTITLES (C) */
+#caption {
+  position: absolute; left: 50%; bottom: 60px; z-index: 6; width: max-content; max-width: 880px;
+  text-align: center; pointer-events: none; opacity: 0;
+  transform: translate(-50%, 8px); transition: opacity .3s ease, transform .45s cubic-bezier(.2,.8,.2,1);
+}
+#caption.on { opacity: 1; transform: translate(-50%, 0); }
+#caption span {
+  display: inline-block; padding: 9px 20px 10px; border-radius: 12px;
+  background: rgba(8, 10, 16, .74); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  color: #fff; font-size: 21px; font-weight: 600; line-height: 1.4; letter-spacing: -.005em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+}
+
+/* FILM MODE — cursor hides while it plays; moving the mouse brings the controls back */
+body.film:not(.hud-awake) { cursor: none; }
+
+/* begin screen: second option, play as a film */
+.bg-film {
+  margin-top: .6vh; display: inline-flex; align-items: center; gap: 1vh; padding: 1.1vh 2.2vh; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: rgba(255,255,255,.88);
+  font-size: 1.45vh; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  transition: background .25s, border-color .25s, transform .25s;
+}
+.bg-film svg { width: 2.2vh; height: 2.2vh; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.bg-film svg path { fill: currentColor; stroke: none; }
+.bg-film em { font-style: normal; text-transform: none; letter-spacing: .01em; font-weight: 500; color: rgba(255,255,255,.45); margin-left: .4vh; }
+.bg-film:hover { background: rgba(var(--accent-rgb), .22); border-color: rgba(var(--accent-rgb), .6); transform: translateY(-1px); }
+
+/* "Working with us" sat high on the slide — centre it */
+.s-start .center-head { margin-top: 28px; }
+.s-start .start { margin-top: 96px; }
+.s-start .start-cta { margin-top: 84px; }
+
+@media print { #caption, #seam { display: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .slide.active .view-shot .frame-screen img, .slide.active .view-shot .frame-screen video { animation: none; }
+}
+/* after a fade the stage is already clear, so the new content starts building at once */
+.slide.fadein .rv { transition-delay: calc(var(--d, 0) * 60ms + 30ms) !important; }
+.slide.fadein .words .wd > span { transition-delay: calc(var(--w) * 50ms + 20ms) !important; }
